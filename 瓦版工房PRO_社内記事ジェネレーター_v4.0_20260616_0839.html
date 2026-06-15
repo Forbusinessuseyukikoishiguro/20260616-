@@ -1,0 +1,1441 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>瓦版工房 PRO — 社内記事ジェネレーター</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@500;700;900&family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --kon:#13213f; --kon2:#1d3160; --kon3:#27407a;
+    --shu:#c8402a; --shu-d:#9c2c1c; --shu-l:#e0664c;
+    --kin:#c9a24b; --kin-l:#e8cf8a; --kin-d:#9c7a2e;
+    --washi:#f6eedb; --washi2:#efe3c6; --washi3:#e7d8b4;
+    --sumi:#231f18; --muted:#6f6450; --line:#d8c79c;
+    --mincho:"Noto Serif JP","Yu Mincho",YuMincho,"Hiragino Mincho ProN",serif;
+    --gothic:"Noto Sans JP","Yu Gothic",YuGothic,"Hiragino Kaku Gothic ProN",sans-serif;
+    --seigaiha:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='60' height='60'%3E%3Cg fill='none' stroke='%23c9a24b' stroke-opacity='0.13' stroke-width='1.1'%3E%3Ccircle cx='0' cy='0' r='30'/%3E%3Ccircle cx='60' cy='0' r='30'/%3E%3Ccircle cx='0' cy='60' r='30'/%3E%3Ccircle cx='60' cy='60' r='30'/%3E%3Ccircle cx='30' cy='30' r='30'/%3E%3C/g%3E%3C/svg%3E");
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    font-family:var(--gothic); color:var(--sumi);
+    background-color:var(--kon);
+    background-image:var(--seigaiha);
+    line-height:1.7; -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:1180px;margin:0 auto;padding:22px 18px 60px;}
+
+  /* ── 暖簾（ヘッダー） ── */
+  .noren{
+    position:relative; margin-bottom:22px;
+    background:linear-gradient(180deg,var(--kon2),var(--kon));
+    border:2px solid var(--kin); border-radius:10px;
+    padding:26px 30px; overflow:hidden;
+    box-shadow:0 10px 30px rgba(0,0,0,.35), inset 0 0 0 6px rgba(201,162,75,.16);
+  }
+  .noren::before,.noren::after{
+    content:""; position:absolute; top:0; bottom:0; width:14px;
+    background:repeating-linear-gradient(180deg,var(--shu) 0 18px,var(--shu-d) 18px 36px);
+    opacity:.85;
+  }
+  .noren::before{left:0;} .noren::after{right:0;}
+  .noren .inner{position:relative; padding:0 18px; display:flex; align-items:center; gap:20px; flex-wrap:wrap;}
+  .title-block{flex:1 1 360px;}
+  .kicker{font-family:var(--mincho); color:var(--kin-l); letter-spacing:.45em; font-size:13px; margin:0 0 4px;}
+  h1.title{
+    font-family:var(--mincho); font-weight:900; color:var(--washi);
+    font-size:clamp(28px,5vw,46px); margin:0; letter-spacing:.06em;
+    text-shadow:0 2px 0 var(--shu-d), 0 0 18px rgba(201,162,75,.25);
+  }
+  h1.title b{color:var(--kin-l);}
+  .subtitle{font-family:var(--mincho); color:var(--washi2); margin:8px 0 0; font-size:15px;}
+  /* 判子 */
+  .hanko-head{
+    flex:0 0 auto; width:96px; height:96px; border-radius:50%;
+    background:radial-gradient(circle at 50% 42%,var(--shu-l),var(--shu) 60%,var(--shu-d));
+    border:3px solid var(--washi); box-shadow:0 0 0 3px var(--shu-d),0 6px 16px rgba(0,0,0,.4);
+    display:flex; align-items:center; justify-content:center;
+    color:var(--washi); font-family:var(--mincho); font-weight:900;
+    writing-mode:vertical-rl; font-size:30px; letter-spacing:.18em; transform:rotate(-4deg);
+  }
+
+  /* ── 木札タブ ── */
+  .tabs{display:flex; gap:12px; margin:0 0 18px; flex-wrap:wrap;}
+  .tab{
+    appearance:none; cursor:pointer; font-family:var(--mincho); font-weight:700;
+    background:linear-gradient(180deg,var(--washi),var(--washi3));
+    color:var(--kon); border:2px solid var(--kin-d); border-bottom-width:5px;
+    border-radius:9px 9px 4px 4px; padding:11px 20px; font-size:15px;
+    box-shadow:0 4px 0 rgba(0,0,0,.25); transition:transform .12s, background .15s;
+  }
+  .tab small{display:block; font-family:var(--gothic); font-weight:500; font-size:11px; color:var(--muted); letter-spacing:.02em;}
+  .tab[aria-selected="true"]{
+    background:linear-gradient(180deg,var(--shu-l),var(--shu)); color:var(--washi);
+    border-color:var(--kin); transform:translateY(2px); border-bottom-width:2px;
+  }
+  .tab[aria-selected="true"] small{color:var(--washi2);}
+  .tab:focus-visible{outline:3px solid var(--kin-l); outline-offset:2px;}
+  .kata-row{display:flex; align-items:center; gap:12px; margin:0 0 18px; flex-wrap:wrap;}
+  .kata-label{font-family:var(--mincho); color:var(--kin-l); font-weight:700; font-size:14px; letter-spacing:.1em;}
+  .seg.kata button{padding:9px 18px; font-family:var(--mincho); font-weight:700;}
+  .purpose-hint{color:var(--washi2); font-family:var(--mincho); font-size:13px; margin:0 0 16px; letter-spacing:.04em;}
+
+  /* ── 工房 2カラム ── */
+  .workshop{display:grid; grid-template-columns:1fr 1fr; gap:20px; align-items:start;}
+  @media(max-width:900px){.workshop{grid-template-columns:1fr;}}
+
+  .panel{
+    background:var(--washi);
+    background-image:linear-gradient(0deg,rgba(180,150,90,.05),rgba(180,150,90,.05));
+    border:2px solid var(--kin); border-radius:12px; padding:20px 20px 24px;
+    box-shadow:0 8px 22px rgba(0,0,0,.3);
+  }
+  .panel-head{
+    display:flex; align-items:center; gap:10px; margin:-2px 0 14px;
+    font-family:var(--mincho); font-weight:700; color:var(--kon); font-size:18px;
+    padding-bottom:10px; border-bottom:2px solid var(--line);
+  }
+  .panel-head .dot{width:12px;height:12px;background:var(--shu);transform:rotate(45deg);border:1px solid var(--shu-d);}
+
+  label.fld{display:block; margin:0 0 13px;}
+  label.fld > span{display:block; font-weight:700; font-size:13px; color:var(--kon2); margin:0 0 5px;}
+  label.fld > span em{font-style:normal; color:var(--shu-d); font-weight:500; font-size:11px; margin-left:6px;}
+  input[type=text], textarea, select{
+    width:100%; font-family:var(--gothic); font-size:14px; color:var(--sumi);
+    background:#fffdf7; border:1.5px solid var(--line); border-radius:7px;
+    padding:9px 11px; transition:border-color .15s, box-shadow .15s;
+  }
+  textarea{resize:vertical; min-height:62px; line-height:1.6;}
+  input:focus, textarea:focus, select:focus{
+    outline:none; border-color:var(--shu); box-shadow:0 0 0 3px rgba(200,64,42,.16);
+  }
+  .grid2{display:grid; grid-template-columns:1fr 1fr; gap:0 14px;}
+  @media(max-width:520px){.grid2{grid-template-columns:1fr;}}
+
+  /* 本題ブロック */
+  .block{border:1.5px dashed var(--kin-d); border-radius:9px; padding:12px 12px 4px; margin:0 0 12px; background:rgba(255,253,243,.6);}
+  .block-top{display:flex; gap:8px; align-items:center; margin-bottom:8px;}
+  .block-top input{flex:1;}
+  .mini{
+    cursor:pointer; border:1.5px solid var(--shu-d); background:var(--washi2); color:var(--shu-d);
+    border-radius:6px; width:30px; height:30px; font-size:16px; font-weight:700; flex:0 0 auto;
+  }
+  .mini:hover{background:var(--shu); color:var(--washi);}
+  .add-block{
+    cursor:pointer; font-family:var(--mincho); font-weight:700; width:100%;
+    background:var(--washi2); color:var(--kon); border:1.5px dashed var(--kin-d);
+    border-radius:8px; padding:9px; font-size:14px; margin-bottom:6px;
+  }
+  .add-block:hover{background:var(--kin-l);}
+
+  /* 出力設定 */
+  .opts{margin:6px 0 4px; padding:12px; background:rgba(19,33,63,.05); border-radius:9px; border:1px solid var(--line);}
+  .opts .row{display:flex; gap:18px; flex-wrap:wrap; margin-bottom:8px;}
+  .seg{display:flex; flex-wrap:wrap; border:1.5px solid var(--kin-d); border-radius:8px; overflow:hidden;}
+  .seg button{
+    appearance:none; cursor:pointer; font-family:var(--gothic); font-weight:700; font-size:13px;
+    background:#fffdf7; color:var(--kon2); border:0; border-right:1.5px solid var(--kin-d); padding:8px 16px;
+  }
+  .seg button:last-child{border-right:0;}
+  .seg button[aria-pressed="true"]{background:var(--kon2); color:var(--washi);}
+  .chk{display:inline-flex; align-items:center; gap:6px; font-size:13px; color:var(--kon2); cursor:pointer;}
+  .chk input{width:16px;height:16px; accent-color:var(--shu);}
+
+  .stamp-btn{
+    position:relative; cursor:pointer; width:100%; margin-top:8px;
+    font-family:var(--mincho); font-weight:900; font-size:19px; letter-spacing:.14em;
+    color:var(--washi); background:linear-gradient(180deg,var(--shu-l),var(--shu) 55%,var(--shu-d));
+    border:2px solid var(--kin); border-radius:10px; padding:14px;
+    box-shadow:0 6px 0 var(--shu-d), 0 10px 20px rgba(0,0,0,.3); transition:transform .1s;
+  }
+  .stamp-btn:active{transform:translateY(4px); box-shadow:0 2px 0 var(--shu-d);}
+  .stamp-btn:focus-visible{outline:3px solid var(--kin-l); outline-offset:3px;}
+
+  /* 刷り上がり（出力） */
+  .press{position:relative;}
+  .press .sheet-wrap{position:relative;}
+  .hanko-stamp{
+    position:absolute; top:8px; right:10px; z-index:3; width:74px; height:74px; border-radius:50%;
+    border:3px double var(--shu); color:var(--shu); font-family:var(--mincho); font-weight:900;
+    display:flex; align-items:center; justify-content:center; writing-mode:vertical-rl;
+    font-size:22px; letter-spacing:.12em; transform:rotate(-8deg); opacity:.92; pointer-events:none;
+    background:radial-gradient(circle,rgba(200,64,42,.06),transparent 70%);
+  }
+  @media(prefers-reduced-motion:no-preference){
+    .hanko-stamp.fire{animation:stamp .45s cubic-bezier(.2,.8,.3,1.2);}
+    @keyframes stamp{0%{transform:rotate(-8deg) scale(1.7); opacity:0;}60%{opacity:1;}100%{transform:rotate(-8deg) scale(1); opacity:.92;}}
+  }
+  textarea#out, textarea#tplPreview{
+    width:100%; min-height:430px; background:#fffdf6; border:1.5px solid var(--line);
+    border-radius:9px; padding:16px; font-family:"SFMono-Regular",Consolas,"Yu Gothic",monospace;
+    font-size:12.5px; line-height:1.65; color:var(--sumi); white-space:pre; overflow:auto;
+  }
+  /* 穴埋め記入ステージ */
+  .view-toggle{display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin:-2px 0 12px;}
+  .fill-count{font-family:var(--mincho); font-weight:700; color:var(--kon2); font-size:13px;}
+  .fill-count b{color:var(--shu-d); font-size:15px;}
+  .fill-count.clear b{color:#2f7a52;}
+  .fill-stage{
+    display:none; background:#fffdf6;
+    background-image:linear-gradient(0deg,rgba(180,150,90,.04),rgba(180,150,90,.04));
+    border:1.5px solid var(--line); border-radius:9px; padding:18px 18px 22px;
+    min-height:430px; max-height:64vh; overflow:auto;
+    font-family:var(--gothic); font-size:14px; line-height:2; color:var(--sumi); white-space:pre-wrap; word-break:break-word;
+  }
+  .fill-stage.on{display:block;}
+  input.blank{
+    display:inline-block; font-family:var(--gothic); font-size:13.5px; font-weight:500; color:var(--shu-d);
+    background:rgba(232,207,138,.32); border:0; border-bottom:2px solid var(--kin-d);
+    border-radius:4px 4px 0 0; padding:1px 7px; margin:0 2px; min-width:5ch; vertical-align:baseline; transition:background .15s,border-color .15s;
+  }
+  input.blank::placeholder{color:var(--muted); font-weight:400;}
+  input.blank:focus{outline:none; background:rgba(200,64,42,.14); border-bottom-color:var(--shu);}
+  input.blank.done{color:var(--kon); background:rgba(47,122,82,.14); border-bottom-color:#2f7a52;}
+  .fill-bar{display:none; align-items:center; gap:12px; margin-top:12px; flex-wrap:wrap;}
+  .press-actions{display:flex; gap:10px; margin-top:12px; flex-wrap:wrap;}
+  .act{
+    cursor:pointer; font-family:var(--mincho); font-weight:700; font-size:14px;
+    border:2px solid var(--kin-d); border-radius:8px; padding:10px 16px;
+    background:linear-gradient(180deg,var(--washi),var(--washi3)); color:var(--kon);
+    box-shadow:0 3px 0 rgba(0,0,0,.22);
+  }
+  .act:hover{background:var(--kin-l);}
+  .act.primary{background:linear-gradient(180deg,var(--kon3),var(--kon2)); color:var(--washi); border-color:var(--kin);}
+  .act:focus-visible{outline:3px solid var(--kin-l); outline-offset:2px;}
+  .hint{font-size:12px; color:var(--muted); margin:10px 2px 0;}
+  .mini-link{appearance:none; cursor:pointer; font-family:var(--mincho); font-weight:700; font-size:12.5px; color:var(--kon); background:var(--washi2); border:1.5px solid var(--kin-d); border-radius:7px; padding:5px 12px;}
+  .pro-badge{display:inline-block; background:linear-gradient(180deg,var(--kin-l),var(--kin)); color:var(--kon); font-weight:700; font-size:11px; letter-spacing:.14em; padding:2px 10px; border-radius:20px; border:1px solid var(--kin-d); margin-left:8px; vertical-align:middle; box-shadow:0 1px 3px rgba(0,0,0,.3);}
+  .ver-stamp{font-family:var(--mincho); color:var(--kin-l); font-size:12px; letter-spacing:.06em; margin-left:6px;}
+  /* 江戸グッズが流れるヘッダー */
+  .ticker{position:absolute; top:5px; left:20px; right:20px; height:22px; overflow:hidden; pointer-events:none; z-index:1;}
+  .ticker .gd{position:absolute; top:0; font-size:16px; line-height:1; white-space:nowrap; will-change:transform;}
+  /* 白兎マスコット */
+  .mascot{position:fixed; right:14px; bottom:14px; z-index:45; width:128px; text-align:center; pointer-events:none; user-select:none;}
+  .mascot svg{width:100px; height:auto; filter:drop-shadow(0 4px 8px rgba(0,0,0,.3));}
+  @media(prefers-reduced-motion:no-preference){ .mascot svg{animation:hop 3.2s ease-in-out infinite;} @keyframes hop{0%,100%{transform:translateY(0);}50%{transform:translateY(-5px);}} }
+  .bubble{position:relative; margin:0 auto 8px; max-width:178px; background:var(--washi); color:var(--kon); border:2px solid var(--shu); border-radius:13px; padding:8px 11px; font-family:var(--mincho); font-weight:700; font-size:12.5px; line-height:1.5; box-shadow:0 5px 12px rgba(0,0,0,.28); pointer-events:auto;}
+  .bubble::after{content:""; position:absolute; bottom:-9px; left:50%; transform:translateX(-50%); border:8px solid transparent; border-top-color:var(--shu);}
+  .bubble.hide{display:none;}
+  .mascot .close-m{position:absolute; top:-6px; right:6px; width:22px; height:22px; border-radius:50%; background:var(--kon); color:var(--washi); border:1.5px solid var(--kin); font-size:13px; cursor:pointer; pointer-events:auto; line-height:18px;}
+  @media(max-width:560px){ .mascot{width:96px; right:6px; bottom:6px;} .mascot svg{width:72px;} .bubble{font-size:11px; max-width:140px;} }
+  /* 使い方 高札（こうさつ） */
+  .help-board{background:#efe2c2; background-image:linear-gradient(0deg,rgba(120,90,40,.06),rgba(120,90,40,.06)); border:3px solid #6b4a23; border-radius:10px; padding:24px 26px; box-shadow:0 10px 24px rgba(0,0,0,.3), inset 0 0 0 4px rgba(107,74,35,.22); color:#3a2a14;}
+  .help-board h2{font-family:var(--mincho); text-align:center; color:#5a3c18; font-size:23px; margin:0 0 4px; letter-spacing:.22em;}
+  .help-board .ofure{text-align:center; font-family:var(--mincho); color:#7a5a2a; margin:0 0 18px; letter-spacing:.1em; font-size:13px;}
+  .help-step{display:flex; gap:14px; padding:13px 0; border-top:1px dashed #b59a63;}
+  .help-step:first-of-type{border-top:0;}
+  .help-no{flex:0 0 auto; width:34px; height:34px; border-radius:50%; background:var(--shu); color:var(--washi); font-family:var(--mincho); font-weight:900; display:flex; align-items:center; justify-content:center; border:2px solid var(--kin);}
+  .help-step h3{font-family:var(--mincho); margin:2px 0 5px; font-size:16px; color:#4a3318;}
+  .help-step p{margin:0; font-size:13.5px; line-height:1.85;}
+  .help-step b{color:var(--shu-d);}
+  /* 動作ログ（不具合の控え） */
+  .log-launch{position:fixed; left:12px; bottom:12px; z-index:44; cursor:pointer; background:var(--kon); color:var(--washi); border:1.5px solid var(--kin); border-radius:20px; font-family:var(--mincho); font-weight:700; font-size:12px; padding:7px 13px; box-shadow:0 4px 10px rgba(0,0,0,.3);}
+  .log-launch b{color:var(--shu-l); margin-left:2px;}
+  .log-panel{position:fixed; inset:0; z-index:60; background:rgba(19,33,63,.55); display:none; align-items:center; justify-content:center; padding:18px;}
+  .log-panel.on{display:flex;}
+  .log-card{width:100%; max-width:640px; background:var(--washi); border:2px solid var(--kin); border-radius:12px; padding:18px; box-shadow:0 14px 36px rgba(0,0,0,.5);}
+  .log-card h3{font-family:var(--mincho); color:var(--kon); margin:0 0 10px; font-size:17px;}
+  .log-card textarea{width:100%; min-height:240px; max-height:48vh; font-family:Consolas,monospace; font-size:12px; line-height:1.55; border:1.5px solid var(--line); border-radius:8px; padding:12px; background:#fffdf6; color:var(--sumi); white-space:pre; overflow:auto;}
+  .log-actions{display:flex; gap:10px; margin-top:12px; flex-wrap:wrap;}
+  .mini-link:hover{background:var(--kin-l);}
+  .metrics{font-family:var(--mincho); font-weight:700; color:var(--kon2); font-size:13px;}
+  .metrics b{color:var(--shu-d); font-size:15px;}
+  .preview-view{display:none; background:#fffdf6; border:1.5px solid var(--line); border-radius:9px; padding:18px 22px; min-height:430px; max-height:64vh; overflow:auto;}
+  .preview-view.on{display:block;}
+  .preview-view h1{font-family:var(--mincho); font-size:22px; color:var(--kon); margin:.2em 0 .5em; border-bottom:2px solid var(--kin); padding-bottom:.2em;}
+  .preview-view h2{font-family:var(--mincho); font-size:18px; color:var(--kon2); margin:1em 0 .4em; border-bottom:1px solid var(--line); padding-bottom:.15em;}
+  .preview-view h3{font-family:var(--mincho); font-size:15px; color:var(--shu-d); margin:.9em 0 .3em;}
+  .preview-view p{margin:.5em 0; font-size:14px; line-height:1.95;}
+  .preview-view ul,.preview-view ol{margin:.4em 0 .8em 1.4em;}
+  .preview-view li{margin:.25em 0; font-size:14px; line-height:1.8;}
+  .preview-view blockquote{margin:.6em 0; padding:9px 14px; background:var(--washi2); border-left:4px solid var(--kin-d); border-radius:0 6px 6px 0; font-size:13.5px;}
+  .preview-view table{border-collapse:collapse; width:100%; margin:.7em 0; font-size:13px;}
+  .preview-view th,.preview-view td{border:1px solid var(--line); padding:6px 10px; text-align:left; vertical-align:top;}
+  .preview-view th{background:var(--kon2); color:var(--washi); font-weight:700;}
+  .preview-view tr:nth-child(even) td{background:#faf4e6;}
+  .preview-view code{font-family:Consolas,monospace; background:#f0e8d3; padding:1px 5px; border-radius:4px; font-size:12.5px;}
+  .preview-view pre{background:#1d2a44; color:#e8e2d2; padding:12px 14px; border-radius:8px; overflow:auto; font-size:12px; line-height:1.5;}
+  .preview-view pre code{background:none; color:inherit; padding:0;}
+  .preview-view hr{border:0; border-top:1px solid var(--line); margin:1em 0;}
+  .draft-mgr{display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin-bottom:8px;}
+  .draft-mgr input,.draft-mgr select{font-family:var(--gothic); font-size:13px; border:1.5px solid var(--line); border-radius:7px; padding:7px 9px; background:#fffdf7; color:var(--sumi);}
+  .draft-mgr input{width:160px;} .draft-mgr select{min-width:160px;}
+  .memo-row{margin-top:18px; border-top:1px solid var(--line); padding-top:16px;}
+  .memo-row textarea{width:100%; min-height:74px; font-family:var(--gothic); font-size:13px; border:1.5px solid var(--line); border-radius:8px; padding:10px; background:#fffdf7; resize:vertical; line-height:1.6; color:var(--sumi);}
+  #printArea{position:fixed; left:-9999px; top:0; width:1px;}
+  @media print{
+    .wrap{display:none !important;} .toast{display:none !important;}
+    #printArea{position:static; left:0; width:auto; display:block; padding:8mm; color:#000;}
+    body{background:#fff !important; background-image:none !important;}
+    #printArea h1,#printArea h2,#printArea h3{color:#111 !important;}
+    #printArea th{background:#333 !important; color:#fff !important;}
+  }
+  .toast{
+    position:fixed; left:50%; bottom:26px; transform:translateX(-50%) translateY(20px);
+    background:var(--kon); color:var(--washi); border:1.5px solid var(--kin); border-radius:30px;
+    padding:10px 22px; font-family:var(--mincho); font-weight:700; opacity:0; pointer-events:none;
+    transition:opacity .25s, transform .25s; box-shadow:0 8px 20px rgba(0,0,0,.4); z-index:50;
+  }
+  .toast.show{opacity:1; transform:translateX(-50%) translateY(0);}
+  .fubako{margin-top:20px;}
+  .fubako-grid{display:grid; grid-template-columns:1fr 1fr; gap:24px;}
+  @media(max-width:760px){.fubako-grid{grid-template-columns:1fr;}}
+  .fb-h{font-family:var(--mincho); font-weight:700; color:var(--kon2); font-size:15px; margin:0 0 8px;}
+  .fb-note{font-size:12px; color:var(--shu-d); margin:0 0 10px; line-height:1.6;}
+  .fb-row{display:flex; gap:10px; flex-wrap:wrap;}
+  .foot{text-align:center; color:var(--kin-l); font-family:var(--mincho); margin-top:26px; font-size:12.5px; letter-spacing:.08em; opacity:.85;}
+  .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);}
+  .hide{display:none !important;}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="noren">
+    <div class="ticker" id="ticker" aria-hidden="true"></div>
+    <div class="inner">
+      <div class="title-block">
+        <p class="kicker">社内記事ジェネレーター<span class="pro-badge">PRO</span></p>
+        <h1 class="title">瓦版<b>工房</b></h1>
+        <p class="subtitle">研修講師・エンジニアの「記事の下ごしらえ」処 ── 入力すれば、整った下書きが刷り上がる<span class="ver-stamp">ver 4.0 ・ 2026/06/16 08:39</span></p>
+      </div>
+      <div class="hanko-head" aria-hidden="true">瓦版</div>
+    </div>
+  </header>
+
+  <div class="tabs" role="tablist" aria-label="やること">
+    <button class="tab" id="pPlan" role="tab" aria-selected="false" onclick="setPurpose('plan')">
+      企画を立てる<small>誰の課題・ペルソナ・Why/What/How</small>
+    </button>
+    <button class="tab" id="pPrompt" role="tab" aria-selected="false" onclick="setPurpose('prompt')">
+      プロンプトを作る<small>AIに渡す指示文を刷る</small>
+    </button>
+    <button class="tab" id="pWrite" role="tab" aria-selected="false" onclick="setPurpose('write')">
+      記事を書く<small>空欄を埋めて仕上げる</small>
+    </button>
+    <button class="tab" id="pTpl" role="tab" aria-selected="false" onclick="setPurpose('template')">
+      ひな形ダウンロード<small>空欄テンプレを.mdで</small>
+    </button>
+    <button class="tab" id="pHelp" role="tab" aria-selected="false" onclick="setPurpose('help')">
+      使い方（高札）<small>各タブの手引き・江戸風</small>
+    </button>
+  </div>
+
+  <div class="kata-row">
+    <span class="kata-label">型</span>
+    <div class="seg kata" role="group" aria-label="記事の型">
+      <button id="tab8" aria-pressed="true" onclick="switchTpl('8')">八章立て（しっかり）</button>
+      <button id="tabS" aria-pressed="false" onclick="switchTpl('S')">簡易の覚書（さっと）</button>
+    </div>
+  </div>
+  <p class="purpose-hint" id="purposeHint"></p>
+
+  <div class="workshop" id="workshop">
+    <!-- 文机（入力） -->
+    <section class="panel" aria-label="入力">
+      <div class="panel-head"><span class="dot" aria-hidden="true"></span><span>文机 ── 内容を書き入れる</span><button class="mini-link" style="margin-left:auto;" onclick="loadSample()">サンプルを入れる</button></div>
+
+      <!-- 八章立て -->
+      <div id="form8">
+        <div class="grid2">
+          <label class="fld"><span>記事タイトル</span><input type="text" id="f8_title" placeholder="例：新卒研修サブ講師 情報対応指針"></label>
+          <label class="fld"><span>作成者</span><input type="text" id="f8_author" placeholder="例：石黒 友季子"></label>
+        </div>
+        <label class="fld"><span>サブタイトル<em>「──」の一文</em></span><input type="text" id="f8_subtitle" placeholder="例：情報欠損時は「確認して回答」に一本化する"></label>
+        <label class="fld"><span>立場・場面</span><input type="text" id="f8_stance" placeholder="例：新卒研修のサブ講師として客先に参画"></label>
+        <label class="fld"><span>適用範囲<em>当てはまる／当てはまらないケース</em></span><textarea id="f8_scope" placeholder="例：研修サブ講師に特化。プロジェクト現場では当てはまらない。"></textarea></label>
+        <label class="fld"><span>対象読者<em>1行に1人物像</em></span><textarea id="f8_readers" placeholder="経験の浅いサブ講師&#10;情報連携がない中で立ち回りたい人&#10;同じ失敗をしたくない人"></textarea></label>
+        <label class="fld"><span>避けるべき点<em>1行に1項目／補足は「項目／補足」</em></span><textarea id="f8_avoid" placeholder="独断と受け取られる言動／指示があるまで見守る&#10;相手のプライドを傷つける指摘／一旦指摘しない&#10;「分からない」と言って責任を抱え込む"></textarea></label>
+        <label class="fld"><span>基本方針の一文</span><input type="text" id="f8_policy" placeholder="例：不確実な事項は、すべて「確認して回答」で返す"></label>
+        <label class="fld"><span>フロー（分岐・ループ）</span><textarea id="f8_flow" placeholder="例：質問→確実な情報がある？ Yes=事実のみ回答 / No=確認テンプレ→本講師へ→返答待ち→なければ再確認ループ"></textarea></label>
+        <div class="grid2">
+          <label class="fld"><span>「◯◯集」の名称</span><input type="text" id="f8_colname" placeholder="例：言い回し集"></label>
+          <label class="fld"><span>件数</span><input type="text" id="f8_colcount" placeholder="例：30"></label>
+        </div>
+        <label class="fld"><span>A/B/C グループの観点</span><textarea id="f8_colgroups" placeholder="A=その場で答えない / B=推測を避ける / C=「分からない」も言わない"></textarea></label>
+        <div class="grid2">
+          <label class="fld"><span>比較する立場A</span><input type="text" id="f8_cmpa" placeholder="例：研修中のサブ講師"></label>
+          <label class="fld"><span>比較する立場B</span><input type="text" id="f8_cmpb" placeholder="例：現場の先輩"></label>
+        </div>
+        <label class="fld"><span>比較軸</span><input type="text" id="f8_axes" placeholder="例：立場／扱い／目的／動き／リスク"></label>
+        <label class="fld"><span>締めのメッセージ</span><input type="text" id="f8_closing" placeholder="例：私の失敗が、あなたの役に立ちますように"></label>
+
+        <div class="opts" id="f8opts">
+          <div class="row" style="margin-bottom:10px;font-size:12px;color:var(--kon2);font-weight:700;">プロンプトに追加で付ける指示</div>
+          <div class="row">
+            <label class="chk"><input type="checkbox" id="f8_word">Word化の指示も付ける</label>
+            <label class="chk"><input type="checkbox" id="f8_png">フロー図PNGの指示も付ける</label>
+            <label class="chk"><input type="checkbox" id="f8_pub">社外公開版の指示も付ける</label>
+          </div>
+        </div>
+      </div>
+
+      <!-- 簡易の覚書 -->
+      <div id="formS" class="hide">
+        <label class="fld"><span>タイトル（ページ名）</span><input type="text" id="fs_title" placeholder="例：Django+SQLite デプロイ手引き"></label>
+        <label class="fld"><span>このページについて<em>1〜3行の要約</em></span><textarea id="fs_summary" placeholder="新人向け。読めば社内ルールと同時アクセスの注意がわかる。"></textarea></label>
+        <label class="fld"><span>前提・スコープ<em>対象外も</em></span><textarea id="fs_premise" placeholder="開発環境はSQLite前提。本番のPostgreSQL移行は対象外。"></textarea></label>
+
+        <div style="font-weight:700;font-size:13px;color:var(--kon2);margin:4px 0 8px;">本題（小見出し＋要点）</div>
+        <div id="blocks"></div>
+        <button type="button" class="add-block" onclick="addBlock()">＋ 小見出しを追加</button>
+
+        <label class="fld" style="margin-top:12px;"><span>補足<em>例外・注意・FAQ</em></span><textarea id="fs_note" placeholder="特になければ空欄でOK"></textarea></label>
+        <label class="fld"><span>まとめ<em>結論／次のアクション</em></span><textarea id="fs_end" placeholder="まずは手引き通りに。詰まったら確認チャンネルへ。"></textarea></label>
+        <label class="fld"><span>想定読者</span><input type="text" id="fs_readers" placeholder="例：新人エンジニア"></label>
+
+        <div class="opts" id="fsopts">
+          <div class="row" style="margin-bottom:8px;font-size:12px;color:var(--kon2);font-weight:700;">プロンプトに追加で付ける指示</div>
+          <div class="row">
+            <label class="chk"><input type="checkbox" id="fs_notion">Notion貼り付け版の指示も付ける</label>
+          </div>
+        </div>
+      </div>
+
+      <!-- 企画を立てる -->
+      <div id="formPlan" class="hide">
+        <label class="fld"><span>記事の仮タイトル</span><input type="text" id="pl_title" placeholder="例：新卒研修サブ講師 情報対応指針"></label>
+        <div style="font-weight:700;font-size:13px;color:var(--shu-d);margin:6px 0 8px;border-bottom:1px solid var(--line);padding-bottom:4px;">誰の・何の課題を解くか</div>
+        <label class="fld"><span>対象は誰か</span><input type="text" id="pl_target" placeholder="例：客先研修に入る経験の浅いサブ講師"></label>
+        <label class="fld"><span>課題・痛み</span><textarea id="pl_pain" placeholder="例：情報が来ない中で受講生に何と答えるか分からず固まる"></textarea></label>
+        <label class="fld"><span>なぜ今その課題か</span><input type="text" id="pl_whynow" placeholder="例：研修現場は情報欠損が常態で、毎回判断を迫られるから"></label>
+
+        <div style="font-weight:700;font-size:13px;color:var(--shu-d);margin:10px 0 8px;border-bottom:1px solid var(--line);padding-bottom:4px;">ペルソナ（具体）</div>
+        <label class="fld"><span>名前・属性</span><input type="text" id="pl_pname" placeholder="例：入社1年目の田中さん（25歳・文系出身）"></label>
+        <label class="fld"><span>役割・レベル</span><input type="text" id="pl_prole" placeholder="例：サブ講師2回目／Linuxは初級"></label>
+        <label class="fld"><span>置かれた状況</span><textarea id="pl_psit" placeholder="例：本講師が席を外し、受講生から想定外の質問が来た"></textarea></label>
+        <label class="fld"><span>なりたい姿（ゴール）</span><input type="text" id="pl_pgoal" placeholder="例：迷っても事故らず、確認して正しく返せる"></label>
+
+        <div style="font-weight:700;font-size:13px;color:var(--shu-d);margin:10px 0 8px;border-bottom:1px solid var(--line);padding-bottom:4px;">Why / What / How</div>
+        <label class="fld"><span>Why（なぜ書くか）</span><textarea id="pl_why" placeholder="この記事を出す理由・価値。なぜ読者に必要か。"></textarea></label>
+        <label class="fld"><span>What（何を渡すか）</span><textarea id="pl_what" placeholder="読者が持ち帰る結論・道具（例：確認テンプレと判断フロー）"></textarea></label>
+        <label class="fld"><span>How（どう解決するか）</span><textarea id="pl_how" placeholder="具体的な手段・流れ（例：確認して回答する手順とエスカレーション）"></textarea></label>
+
+        <button type="button" class="add-block" style="margin-top:6px;" onclick="reflectPlan()">▶ この企画を記事フォームへ反映する</button>
+      </div>
+
+      <button class="stamp-btn" id="genBtn" onclick="generate()">プロンプトを刷る</button>
+    </section>
+
+    <!-- 刷り上がり（出力） -->
+    <section class="panel press" aria-label="出力">
+      <div class="panel-head"><span class="dot" aria-hidden="true"></span>刷り上がり ── 出来たものを写し取る</div>
+      <div class="view-toggle">
+        <div class="seg" role="group" aria-label="表示の切り替え">
+          <button id="viewText" aria-pressed="true" onclick="setView('text')">文（テキスト）</button>
+          <button id="viewFill" aria-pressed="false" onclick="setView('fill')">穴埋めを書く</button>
+          <button id="viewPrev" aria-pressed="false" onclick="setView('preview')">整形プレビュー</button>
+        </div>
+        <span class="fill-count" id="fillCount" style="display:none;"></span>
+        <span class="metrics" id="metrics" style="margin-left:auto;"></span>
+      </div>
+      <div class="sheet-wrap">
+        <div class="hanko-stamp" id="stamp" aria-hidden="true">刷了</div>
+        <label class="sr" for="out">生成結果</label>
+        <textarea id="out" spellcheck="false" readonly>ここに刷り上がります。
+
+左の「文机」に内容を書き入れ、
+下の朱印「刷り上げる」を押してください。
+
+そのまま自分で書くなら、上の
+「穴埋めを書く」で空欄を埋められます。</textarea>
+        <div class="fill-stage" id="fillView" aria-label="穴埋め記入欄"></div>
+        <div class="preview-view" id="previewView" aria-label="整形プレビュー"></div>
+      </div>
+      <div class="fill-bar" id="fillBar">
+        <button class="act primary" onclick="commitFill()">この内容で清書する</button>
+        <button class="act" onclick="nextBlank()">次の空欄へ ⏎</button>
+        <span class="hint" style="margin:0;">空欄のままの所は ［…］ で残ります。</span>
+      </div>
+      <div class="press-actions">
+        <button class="act primary" onclick="copyOut()">写し取る（コピー）</button>
+        <button class="act" onclick="downloadOut()">.md で持ち帰る</button>
+        <button class="act" onclick="downloadWord()">Wordで保存(.doc)</button>
+        <button class="act" onclick="doPrint()">PDFで保存（印刷）</button>
+        <button class="act" onclick="clearAll()">白紙に戻す</button>
+      </div>
+      <p class="hint">※ オフラインで動く単一ファイル。入力内容はこの画面の中だけで処理され、外部に送られません。</p>
+    </section>
+  </div>
+
+  <section class="panel hide" id="templatePane" aria-label="ひな形ダウンロード">
+    <div class="panel-head"><span class="dot" aria-hidden="true"></span>ひな形ダウンロード ── 空欄テンプレを持ち帰る</div>
+    <p class="fb-note" style="color:var(--muted);">選んだ「型」の空欄テンプレートです。社内のエディタやNotionに貼り付けて、そのまま書けます。<br>※「記事を書く」タブなら、入力内容を反映した記事を作って空欄を埋められます。</p>
+    <div class="press-actions" style="margin:0 0 12px;">
+      <button class="act primary" onclick="downloadTemplate()">ひな形(.md)を持ち帰る</button>
+      <button class="act" onclick="copyTemplate()">写し取る（コピー）</button>
+    </div>
+    <label class="sr" for="tplPreview">ひな形プレビュー</label>
+    <textarea id="tplPreview" spellcheck="false" readonly></textarea>
+  </section>
+
+  <section class="panel hide" id="helpBoard" aria-label="使い方">
+    <div class="help-board">
+      <h2>御 触 書</h2>
+      <p class="ofure">― 瓦版工房 PRO 手引き ・ 五つの札（ふだ）の使いよう ―</p>
+      <div class="help-step"><div class="help-no">一</div><div><h3>企画を立てる</h3><p><b>誰の・何の課題</b>か、<b>ペルソナ</b>（名前・レベル・状況・なりたい姿）、<b>Why／What／How</b>を書いて「企画シートを刷る」。<b>記事フォームへ反映</b>を押せば、そのまま執筆へ運べます。</p></div></div>
+      <div class="help-step"><div class="help-no">二</div><div><h3>プロンプトを作る</h3><p>文机に内容を入れ「プロンプトを刷る」で、ChatGPT／Claudeに貼れる指示文に。八章版はWord化・図PNG・社外公開版、簡易版はNotion版の追加指示も付けられます。</p></div></div>
+      <div class="help-step"><div class="help-no">三</div><div><h3>記事を書く</h3><p>「記事を作って穴埋めへ」で下地を作り、<b>［ 記入 ］</b>の空欄を埋めます。<b>Enter</b>で次の空欄へ。文字数と読了時間も出ます。整形プレビューで仕上がりを確認。</p></div></div>
+      <div class="help-step"><div class="help-no">四</div><div><h3>ひな形ダウンロード</h3><p>選んだ型の<b>空欄テンプレ</b>を.mdで持ち帰り、社内のエディタやNotionで直接書けます。</p></div></div>
+      <div class="help-step"><div class="help-no">五</div><div><h3>保存・持ち運び（文箱）</h3><p><b>名前を付けて端末に保存</b>。タブを閉じても自動で控えます。<b>下書き(.json)／CSV</b>で書き出し、<b>読み込み</b>から続きを再開。PDFや写し取り（コピー）も自在。</p></div></div>
+      <div class="help-step"><div class="help-no">兎</div><div><h3>白兎が応援します</h3><p>右下の白兎が、刷るたび・埋めるたびに声をかけ、時々こつ（要点）を教えます。ヘッダーには江戸の縁起物がときどき流れます。</p></div></div>
+    </div>
+  </section>
+
+  <section class="panel fubako" id="fubako" aria-label="保存とひな形">
+    <div class="panel-head"><span class="dot" aria-hidden="true"></span>文箱（ふばこ）── 一時保存と、ひな形の持ち帰り</div>
+    <div class="fubako-grid">
+      <div>
+        <h3 class="fb-h">この端末に名前を付けて保存</h3>
+        <p class="fb-note" id="lsNote"></p>
+        <div class="draft-mgr">
+          <input type="text" id="draftName" placeholder="保存名（例：Linux研修）">
+          <button class="act primary" onclick="saveNamed()">保存</button>
+        </div>
+        <div class="draft-mgr">
+          <select id="draftList"><option value="">― 保存済みを選ぶ ―</option></select>
+          <button class="act" onclick="loadNamed()">呼び出す</button>
+          <button class="act" onclick="deleteNamed()">削除</button>
+        </div>
+        <p class="hint" id="saveInfo" style="margin-top:6px;"></p>
+      </div>
+      <div>
+        <h3 class="fb-h">ひな形・下書きファイル</h3>
+        <p class="fb-note" style="color:var(--muted);">ひな形は空欄テンプレ。社内のエディタやNotionで直接書けます。下書き(.json)は端末を問わず持ち運べます。</p>
+        <div class="fb-row">
+          <button class="act" onclick="downloadTemplate()">ひな形(.md)を持ち帰る</button>
+          <button class="act" onclick="saveFile()">下書きを保存(.json)</button>
+          <button class="act" onclick="loadFile()">下書きを読み込む</button>
+          <button class="act" onclick="exportCSV()">入力をCSVで書き出す</button>
+          <button class="act" onclick="downloadExcel()">Excelで保存(.xls)</button>
+          <button class="act" onclick="importCSVBtn()">CSVから続きを読む</button>
+        </div>
+        <input type="file" id="draftFile" accept="application/json,.json" style="display:none;">
+        <input type="file" id="csvFile" accept=".csv,text/csv" style="display:none;">
+      </div>
+    </div>
+    <div class="memo-row">
+      <h3 class="fb-h">メモ（不具合・TODO・覚え書き）</h3>
+      <textarea id="memo" placeholder="例：固有名詞チェックは目視で／この記事は来週Notionへ／表の比較軸を1つ足す"></textarea>
+    </div>
+  </section>
+
+  <p class="foot">瓦版工房 PRO ・ ver 4.0（2026/06/16 08:39）・ 江戸の刷り処にならいて ── 人ではなく仕組みで、記事を量産する</p>
+</div>
+
+<button class="log-launch" onclick="openLog()" title="動作ログを開く">🐞<b>ログ</b></button>
+<div class="log-panel" id="logPanel" role="dialog" aria-label="動作ログ">
+  <div class="log-card">
+    <h3>動作ログ（不具合の控え）</h3>
+    <textarea id="logOut" readonly spellcheck="false"></textarea>
+    <div class="log-actions">
+      <button class="act primary" onclick="copyLog()">ログをコピー</button>
+      <button class="act" onclick="clearLog()">ログを消す</button>
+      <button class="act" onclick="closeLog()">閉じる</button>
+    </div>
+    <p class="hint" style="margin:8px 2px 0;">不具合が出たら、この控えをコピーして共有してください。バージョン・端末情報も含みます。</p>
+  </div>
+</div>
+
+<div class="mascot" id="mascot" aria-hidden="true">
+  <button class="close-m" onclick="hideMascot()" title="白兎をしまう">×</button>
+  <div class="bubble hide" id="rabbitBubble"></div>
+  <svg viewBox="0 0 130 156" xmlns="http://www.w3.org/2000/svg">
+    <!-- ふわふわ body 輪郭 -->
+        <circle cx="105.0" cy="90.0" r="9" fill="#fdf7ec" stroke="#e7d9bf" stroke-width="1.1"/>
+    <circle cx="103.4" cy="103.0" r="9" fill="#fdf7ec" stroke="#e7d9bf" stroke-width="1.1"/>
+    <circle cx="98.7" cy="114.9" r="9" fill="#fdf7ec" stroke="#e7d9bf" stroke-width="1.1"/>
+    <circle cx="91.2" cy="124.8" r="9" fill="#fdf7ec" stroke="#e7d9bf" stroke-width="1.1"/>
+    <circle cx="81.6" cy="131.8" r="9" fill="#fdf7ec" stroke="#e7d9bf" stroke-width="1.1"/>
+    <circle cx="70.7" cy="135.5" r="9" fill="#fdf7ec" stroke="#e7d9bf" stroke-width="1.1"/>
+    <circle cx="59.3" cy="135.5" r="9" fill="#fdf7ec" stroke="#e7d9bf" stroke-width="1.1"/>
+    <circle cx="48.4" cy="131.8" r="9" fill="#fdf7ec" stroke="#e7d9bf" stroke-width="1.1"/>
+    <circle cx="38.8" cy="124.8" r="9" fill="#fdf7ec" stroke="#e7d9bf" stroke-width="1.1"/>
+    <circle cx="31.3" cy="114.9" r="9" fill="#fdf7ec" stroke="#e7d9bf" stroke-width="1.1"/>
+    <circle cx="26.6" cy="103.0" r="9" fill="#fdf7ec" stroke="#e7d9bf" stroke-width="1.1"/>
+    <circle cx="25.0" cy="90.0" r="9" fill="#fdf7ec" stroke="#e7d9bf" stroke-width="1.1"/>
+    <circle cx="26.6" cy="77.0" r="9" fill="#fdf7ec" stroke="#e7d9bf" stroke-width="1.1"/>
+    <circle cx="31.3" cy="65.1" r="9" fill="#fdf7ec" stroke="#e7d9bf" stroke-width="1.1"/>
+    <circle cx="38.8" cy="55.2" r="9" fill="#fdf7ec" stroke="#e7d9bf" stroke-width="1.1"/>
+    <circle cx="48.4" cy="48.2" r="9" fill="#fdf7ec" stroke="#e7d9bf" stroke-width="1.1"/>
+    <circle cx="59.3" cy="44.5" r="9" fill="#fdf7ec" stroke="#e7d9bf" stroke-width="1.1"/>
+    <circle cx="70.7" cy="44.5" r="9" fill="#fdf7ec" stroke="#e7d9bf" stroke-width="1.1"/>
+    <circle cx="81.6" cy="48.2" r="9" fill="#fdf7ec" stroke="#e7d9bf" stroke-width="1.1"/>
+    <circle cx="91.2" cy="55.2" r="9" fill="#fdf7ec" stroke="#e7d9bf" stroke-width="1.1"/>
+    <circle cx="98.7" cy="65.1" r="9" fill="#fdf7ec" stroke="#e7d9bf" stroke-width="1.1"/>
+    <circle cx="103.4" cy="77.0" r="9" fill="#fdf7ec" stroke="#e7d9bf" stroke-width="1.1"/>
+    <!-- 耳 -->
+    <g>
+      <ellipse cx="46" cy="30" rx="11.5" ry="23" fill="#fdf7ec" stroke="#e7d9bf" stroke-width="1.1" transform="rotate(-9 46 30)"/>
+      <ellipse cx="46" cy="30" rx="5" ry="14" fill="#f6c2ce" transform="rotate(-9 46 30)"/>
+      <ellipse cx="84" cy="30" rx="11.5" ry="23" fill="#fdf7ec" stroke="#e7d9bf" stroke-width="1.1" transform="rotate(9 84 30)"/>
+      <ellipse cx="84" cy="30" rx="5" ry="14" fill="#f6c2ce" transform="rotate(9 84 30)"/>
+    </g>
+        <ellipse cx="65" cy="90" rx="40" ry="46" fill="#fdf7ec"/>
+    <!-- 顔 -->
+    <ellipse cx="44" cy="86" rx="8" ry="5.5" fill="#f7b8c8"/>
+    <ellipse cx="86" cy="86" rx="8" ry="5.5" fill="#f7b8c8"/>
+    <ellipse cx="53" cy="78" rx="5" ry="6.6" fill="#2b2620"/>
+    <ellipse cx="77" cy="78" rx="5" ry="6.6" fill="#2b2620"/>
+    <circle cx="55" cy="75" r="1.7" fill="#ffffff"/>
+    <circle cx="79" cy="75" r="1.7" fill="#ffffff"/>
+    <path d="M61 87 L69 87 L65 91 Z" fill="#d98a8a"/>
+    <path d="M65 91 Q60 95 56 92 M65 91 Q70 95 74 92" stroke="#caa9a0" stroke-width="1.3" fill="none" stroke-linecap="round"/>
+    <!-- にんじん -->
+    <g transform="rotate(18 92 116)">
+      <path d="M92 100 L100 100 L96 132 Z" fill="#ef8a3c" stroke="#cf6f28" stroke-width="1"/>
+      <path d="M94 106 h6 M93 112 h7 M94 118 h5" stroke="#cf6f28" stroke-width="0.8"/>
+      <path d="M92 100 q-5 -8 -1 -12 q4 4 3 11 z" fill="#7bb24a"/>
+      <path d="M96 100 q0 -10 5 -11 q1 6 -2 12 z" fill="#8cc257"/>
+      <path d="M100 100 q5 -7 9 -6 q-2 6 -8 9 z" fill="#7bb24a"/>
+    </g>
+    <circle cx="88" cy="112" r="8" fill="#fdf7ec" stroke="#e7d9bf" stroke-width="1.1"/>
+  </svg>
+</div>
+
+<div id="printArea" class="preview-view"></div>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+"use strict";
+var tpl = '8';        // '8' | 'S'
+var mode = 'prompt';  // 'prompt' | 'fill'
+var purpose = 'prompt'; // 'prompt' | 'write' | 'template'
+
+function $(id){ return document.getElementById(id); }
+function val(id){ var e=$(id); return e? e.value.trim() : ''; }
+function lines(id){ return val(id).split('\n').map(function(s){return s.trim();}).filter(Boolean); }
+function today(){ var d=new Date(); return d.getFullYear()+'/'+('0'+(d.getMonth()+1)).slice(-2)+'/'+('0'+d.getDate()).slice(-2); }
+var FENCE = String.fromCharCode(96,96,96); // ```
+var APP_VER='ver 4.0', APP_STAMP='2026/06/16 08:39';
+var LAB8={f8_title:'タイトル',f8_author:'作成者',f8_subtitle:'サブタイトル',f8_stance:'立場',f8_scope:'適用範囲',f8_readers:'対象読者',f8_avoid:'避けるべき点',f8_policy:'基本方針',f8_flow:'フロー',f8_colname:'集名',f8_colcount:'件数',f8_colgroups:'グループ',f8_cmpa:'比較A',f8_cmpb:'比較B',f8_axes:'比較軸',f8_closing:'締め'};
+var LABS={fs_title:'タイトル',fs_summary:'要約',fs_premise:'前提',fs_note:'補足',fs_end:'まとめ',fs_readers:'想定読者'};
+
+var PURPOSE_HINT={
+  plan:'まず企画。誰の何の課題か・ペルソナ・Why/What/Howを固めると、記事がぶれません。',
+  prompt:'入力 →「プロンプトを刷る」で、ChatGPT／Claudeにそのまま貼れる指示文が出来ます。',
+  write:'入力 →「記事を作って穴埋めへ」で記事の下地ができ、空欄を埋めれば仕上がります。',
+  template:'空欄だけのテンプレを.mdで持ち帰り、社内のエディタやNotionで直接書けます。',
+  help:'各タブの使い方を高札にまとめました。困ったらここへ。'
+};
+
+function setPurpose(p){
+  purpose=p;
+  $('pPlan').setAttribute('aria-selected', p==='plan');
+  $('pPrompt').setAttribute('aria-selected', p==='prompt');
+  $('pWrite').setAttribute('aria-selected', p==='write');
+  $('pTpl').setAttribute('aria-selected', p==='template');
+  $('pHelp').setAttribute('aria-selected', p==='help');
+  var isTpl=(p==='template'), isPlan=(p==='plan'), isHelp=(p==='help');
+  $('workshop').classList.toggle('hide', isTpl || isHelp);
+  $('fubako').classList.toggle('hide', isTpl || isHelp);
+  $('templatePane').classList.toggle('hide', !isTpl);
+  $('helpBoard').classList.toggle('hide', !isHelp);
+  $('formPlan').classList.toggle('hide', !isPlan);
+  $('form8').classList.toggle('hide', isPlan || tpl!=='8');
+  $('formS').classList.toggle('hide', isPlan || tpl==='8');
+  $('purposeHint').textContent = PURPOSE_HINT[p];
+  document.querySelector('.view-toggle').style.display = (p==='write')?'flex':'none';
+  if($('f8opts')) $('f8opts').style.display = (p==='prompt')?'block':'none';
+  if($('fsopts')) $('fsopts').style.display = (p==='prompt')?'block':'none';
+  if(p==='prompt'){ mode='prompt'; $('genBtn').textContent='プロンプトを刷る'; setView('text'); }
+  else if(p==='write'){ mode='fill'; $('genBtn').textContent='記事を作って穴埋めへ'; setView('text'); }
+  else if(p==='plan'){ mode='plan'; $('genBtn').textContent='企画シートを刷る'; setView('text'); }
+  else if(p==='template'){ renderTemplatePreview(); }
+}
+
+function switchTpl(t){
+  tpl=t;
+  $('tab8').setAttribute('aria-pressed', t==='8');
+  $('tabS').setAttribute('aria-pressed', t==='S');
+  if(purpose!=='plan'){
+    $('form8').classList.toggle('hide', t!=='8');
+    $('formS').classList.toggle('hide', t==='8');
+  }
+  if(purpose==='template') renderTemplatePreview();
+}
+function setMode(m){ mode=m; }
+
+function renderTemplatePreview(){
+  var t=(tpl==='8')? template8() : templateS();
+  $('tplPreview').value=t;
+}
+function copyTemplate(){
+  var t=$('tplPreview').value;
+  if(navigator.clipboard && navigator.clipboard.writeText){ navigator.clipboard.writeText(t).then(function(){toast('写し取りました');}); }
+  else { var o=$('tplPreview'); o.removeAttribute('readonly'); o.select(); try{document.execCommand('copy');toast('写し取りました');}catch(e){} o.setAttribute('readonly',''); }
+}
+
+/* ── 本題ブロック（簡易） ── */
+function addBlock(heading, points){
+  var box=$('blocks');
+  var b=document.createElement('div'); b.className='block';
+  var top=document.createElement('div'); top.className='block-top';
+  var inp=document.createElement('input'); inp.type='text'; inp.placeholder='小見出し（例：手順）'; inp.value=heading||'';
+  var del=document.createElement('button'); del.className='mini'; del.type='button'; del.textContent='×'; del.title='削除';
+  del.onclick=function(){ box.removeChild(b); };
+  top.appendChild(inp); top.appendChild(del);
+  var ta=document.createElement('textarea'); ta.placeholder='要点を1行に1つ（3点目安）'; ta.value=points||'';
+  b.appendChild(top); b.appendChild(ta); box.appendChild(b);
+}
+function readBlocks(){
+  var out=[];
+  $('blocks').querySelectorAll('.block').forEach(function(b){
+    var h=b.querySelector('input').value.trim();
+    var pts=b.querySelector('textarea').value.split('\n').map(function(s){return s.trim();}).filter(Boolean);
+    if(h||pts.length) out.push({h:h||'小見出し', pts:pts});
+  });
+  return out;
+}
+
+/* ── 避けるべき点の整形 ── */
+function parseAvoid(){
+  return lines('f8_avoid').map(function(l){
+    var parts=l.split(/[／\/｜|]/);
+    return { lead:(parts[0]||'').trim(), note:(parts.slice(1).join('／')||'').trim() };
+  });
+}
+
+/* ── 八章：プロンプト ── */
+function build8Prompt(){
+  var title=val('f8_title')||'（タイトル未記入）';
+  var readers=lines('f8_readers');
+  var avoid=parseAvoid();
+  var p='';
+  p+='あなたは社内向け技術ナレッジ記事のエディター兼テクニカルライターです。\n';
+  p+='以下の「8セクション構成」を厳守し、敬体・簡潔・実務的なトーンで、読了3分前後の社内ナレッジ記事を書いてください。誇張や断定しすぎは避け、一次情報・自分の経験ベースで。固有名詞（実在の顧客名・案件名・個人名）は本文に書かないこと。\n\n';
+  p+='【構成】\n';
+  p+='■ タイトル ＋ サブタイトル（「── …」の一文）\n';
+  p+='■ 冒頭に【社内限定／取扱注意】の引用ブロック（社外転載NG／固有情報を含めない注記）\n';
+  p+='■ メタ情報（作成日・作成者）\n';
+  p+='1. 背景と目的：小見出し「背景／前提／目的／対象者／読了時間」\n';
+  p+='2. 〔立場〕が避けるべき N点：番号付き（太字リード＋（補足））\n';
+  p+='3. 基本方針：方針の一文を引用ブロックで強調＋【守秘義務との関係】の引用ブロック\n';
+  p+='4. 対応フロー：mermaid の flowchart TD ＋ 図キャプション\n';
+  p+='5. 〔集名〕（N種）：A/B/C グループに分け、1〜N の連番で列挙\n';
+  p+='6. 誤解されやすい点：要点を太字で明言＋「最低限そろえる3点」\n';
+  p+='7. 比較表：〔A〕と〔B〕を比べる表＋「要点」（太字リード＋解説）\n';
+  p+='8. まとめ：条件を箇条書き→①②の補足→温かい締めの一文\n\n';
+  p+='【今回のテーマ】\n';
+  p+='- 記事タイトル：'+title+'\n';
+  p+='- サブタイトル：'+(val('f8_subtitle')||'（任意）')+'\n';
+  p+='- 立場・場面：'+(val('f8_stance')||'（記入）')+'\n';
+  p+='- 適用範囲：'+(val('f8_scope')||'（記入）')+'\n';
+  p+='- 対象読者：'+(readers.length?readers.join('／'):'（記入）')+'\n';
+  p+='- 避けるべき点：\n';
+  if(avoid.length){ avoid.forEach(function(a){ p+='    ・'+a.lead+(a.note?'（'+a.note+'）':'')+'\n'; }); }
+  else { p+='    ・（記入）\n'; }
+  p+='- 基本方針の一文：'+(val('f8_policy')||'（記入）')+'\n';
+  p+='- フロー（分岐・ループ）：'+(val('f8_flow')||'（記入）')+'\n';
+  p+='- 〔集〕：'+(val('f8_colname')||'◯◯集')+'（'+(val('f8_colcount')||'N')+'種）／グループ：'+(val('f8_colgroups')||'A／B／C')+'\n';
+  p+='- 比較表：'+(val('f8_cmpa')||'A')+' と '+(val('f8_cmpb')||'B')+'／比較軸：'+(val('f8_axes')||'立場・扱い・目的・動き・リスク')+'\n';
+  p+='- 締めのメッセージ：'+(val('f8_closing')||'（任意）')+'\n';
+  p+='- 作成者：'+(val('f8_author')||'（記入）')+'／作成日：'+today()+'\n\n';
+  p+='出力は、そのまま .md で保存できる Markdown のみ。コードブロックの外に解説を付けないこと。\n';
+
+  if($('f8_word').checked){
+    p+='\n---\n【追加指示：Word化】\n上記Markdownを配布用Word(.docx)にもしてください。A4・余白1インチ・日本語フォントYu Gothic、H1=セクション番号（下罫線）、H2=小見出し。【社内限定】=アンバー囲み（左に太アクセント）、基本方針=ティール囲み、【守秘義務】=グレー囲み（囲みは単一セルの表で作る）。比較表はティールのヘッダー（白文字）＋1行おきの薄い背景。mermaidはPNG化して画像で埋め込み。番号の連番は維持。検証して開ける状態で渡すこと。\n';
+  }
+  if($('f8_png').checked){
+    p+='\n---\n【追加指示：フロー図PNG】\nセクション4のflowchartを、白背景・日本語フォント埋め込み・2倍解像度のPNGに書き出してください。色分け＝確認/保留:アンバー、確定回答:ティール、開始/終了:グレー。凡例を下部に。ループは点線＋ラベルで表現（↻記号は文字化けするので使わない）。\n';
+  }
+  if($('f8_pub').checked){
+    p+='\n---\n【追加指示：社外公開版】\n社外公開（Qiita/Zenn/note）版も用意してください。【社内限定】囲みは削除し「個人の経験に基づく一般論」である旨の前置きに置換。内部ツール名や客先が推測できる記述は一般名詞化。失敗談は特定されない範囲に丸める。末尾に免責（所属を代表する見解ではない旨）を一行。\n';
+  }
+  return p;
+}
+
+/* ── 八章：Markdown下書き ── */
+function build8Md(){
+  var title=val('f8_title')||'タイトル';
+  var stance=val('f8_stance')||'担当者';
+  var readers=lines('f8_readers');
+  var avoid=parseAvoid();
+  var colname=val('f8_colname')||'◯◯集';
+  var count=val('f8_colcount')||'N';
+  var m='';
+  m+='# '+title+'\n';
+  m+='## ── '+(val('f8_subtitle')||'サブタイトル')+'\n\n';
+  m+='> **【社内限定／取扱注意】**\n';
+  m+='> 社外への転載・共有はご遠慮ください。流用時は顧客名・案件名・個人情報を含めないこと。\n\n';
+  m+='**作成日：** '+today()+'　**作成：** '+(val('f8_author')||'（記入）')+'\n\n';
+  m+='---\n\n## 1. 背景と目的\n\n';
+  m+='### 背景\n- '+(val('f8_stance')||'（背景を記入）')+'\n\n';
+  m+='### 前提\n- '+(val('f8_scope')||'（適用範囲を記入）')+'\n\n';
+  m+='### 目的\n- （この記事で何を伝えるか）\n\n';
+  m+='### 対象者\n'+(readers.length?readers.map(function(r){return '- '+r;}).join('\n'):'- （対象読者）')+'\n\n';
+  m+='### 読了時間\n- 3分\n\n';
+  m+='---\n\n## 2. '+stance+'が避けるべき'+(avoid.length||'N')+'点\n\n';
+  if(avoid.length){ avoid.forEach(function(a,i){ m+=(i+1)+'. **'+a.lead+'**'+(a.note?'（'+a.note+'）':'')+'\n'; }); }
+  else { m+='1. **（避けるべき点）**（補足）\n'; }
+  m+='\n---\n\n## 3. 基本方針\n\n';
+  m+='> **'+(val('f8_policy')||'（基本方針の一文）')+'**\n\n';
+  m+='> **【守秘義務との関係】**\n> 確認できていない情報を口にしない規律は、情報管理・守秘義務とも一致します。\n\n';
+  m+='---\n\n## 4. 対応フロー\n\n';
+  m+=FENCE+'mermaid\nflowchart TD\n';
+  m+='    A[質問される] --> B{確実な情報を持っているか}\n';
+  m+='    B -->|Yes| C["事実のみ回答（推測ゼロ）"]\n    C --> Z[終了]\n';
+  m+='    B -->|No| D["推測しない／『分からない』も述べない"]\n    D --> E["確認テンプレートで返す"]\n';
+  m+='    E --> F["本講師へ連絡 → 返答待ち"]\n    F -->|返答あり| G[正式な情報のみ回答]\n    G --> Z\n';
+  m+='    F -->|返答なし| H[一定時間で再確認]\n    H --> F\n';
+  m+=FENCE+'\n\n図：'+(val('f8_flow')||'（フローの説明）')+'\n\n';
+  m+='---\n\n## 5. '+colname+'（'+count+'種）\n\n';
+  m+='> いずれの言い回しにも、顧客名・案件名・個人の情報を含めないこと。\n\n';
+  var groups=lines('f8_colgroups');
+  if(groups.length){ groups.forEach(function(g,gi){ m+='### '+String.fromCharCode(65+gi)+'. '+g+'\n\n1. （記入）\n\n'; }); }
+  else { m+='### A. （観点）\n\n1. （記入）\n\n### B. （観点）\n\n### C. （観点）\n\n'; }
+  m+='---\n\n## 6. 誤解されやすい点\n\n';
+  m+='**（要点を一文で明言）**\n\n最低限そろえる3点：\n- （1）\n- （2）\n- （3）\n\n';
+  m+='---\n\n## 7. '+(val('f8_cmpa')||'A')+' と '+(val('f8_cmpb')||'B')+'\n\n';
+  var axes=val('f8_axes')? val('f8_axes').split(/[／\/、,]/).map(function(s){return s.trim();}).filter(Boolean) : ['立場','扱い','目的','動き','リスク'];
+  m+='| 観点 | '+(val('f8_cmpa')||'A')+' | '+(val('f8_cmpb')||'B')+' |\n|---|---|---|\n';
+  axes.forEach(function(ax){ m+='| '+ax+' |  |  |\n'; });
+  m+='\n### 要点\n- **（A側の要点）**\n- **（B側の要点）**\n\n';
+  m+='---\n\n## 8. まとめ\n\n- （条件1）\n- （条件2）\n\n';
+  m+='① （補足）\n② （補足）\n\n';
+  m+=(val('f8_closing')||'（温かい締めの一文）')+'\n';
+  return m;
+}
+
+/* ── 簡易：プロンプト ── */
+function buildSPrompt(){
+  var blocks=readBlocks();
+  var p='';
+  p+='あなたは社内ナレッジページのエディターです。\n';
+  p+='以下の骨格を厳守し、簡潔・実務的・敬体で、軽量な社内ページを書いてください。冗長な前置きや誇張はせず、固有名詞（実在の顧客名・案件名・個人名）は書かないこと。\n\n';
+  p+='【骨格】\n';
+  p+='# このページについて（1〜3行の要約／誰の何のためで、読むと何が分かるか）\n';
+  p+='## 前提（スコープ・条件・対象外を箇条書き）\n';
+  p+='## 本題（### 小見出し ＋ 各3点の箇条書き。各点は1〜2文で具体的に）\n';
+  p+='## 補足（例外・注意・FAQ・参考。なければ「特になし」）\n';
+  p+='## まとめ（結論／次にやることを1〜3行）\n\n';
+  p+='【今回の内容】\n';
+  p+='- タイトル：'+(val('fs_title')||'（記入）')+'\n';
+  p+='- このページについて：'+(val('fs_summary')||'（要約／空ならタイトルから生成）')+'\n';
+  p+='- 前提・スコープ：'+(val('fs_premise')||'（記入）')+'\n';
+  p+='- 本題：\n';
+  if(blocks.length){ blocks.forEach(function(b){ p+='    ・'+b.h+'：'+(b.pts.length?b.pts.join('／'):'（要点）')+'\n'; }); }
+  else { p+='    ・（小見出し）：（要点3つ）\n'; }
+  p+='- 補足：'+(val('fs_note')||'特になし')+'\n';
+  p+='- まとめ：'+(val('fs_end')||'（記入）')+'\n';
+  p+='- 想定読者：'+(val('fs_readers')||'（記入）')+'\n\n';
+  p+='出力は、そのまま .md で保存できる Markdown のみ。\n';
+  if($('fs_notion').checked){
+    p+='\n---\n【追加指示：Notion貼り付け版】\nNotionにそのまま貼れるMarkdownで出力してください。「このページについて」はcallout想定で引用（>）に、チェック化できる項目は「- [ ]」に、見出しは#/##/###のまま。\n';
+  }
+  return p;
+}
+
+/* ── 簡易：Markdown下書き ── */
+function buildSMd(){
+  var blocks=readBlocks();
+  var m='';
+  m+='# このページについて\n'+(val('fs_summary')||'（'+(val('fs_title')||'このページ')+'の要約を1〜3行で）')+'\n\n';
+  m+='## 前提\n'+(val('fs_premise')? val('fs_premise').split('\n').map(function(s){return '- '+s.trim();}).join('\n') : '- （スコープ・条件・対象外）')+'\n\n';
+  m+='## 本題\n';
+  if(blocks.length){ blocks.forEach(function(b){ m+='### '+b.h+'\n'+(b.pts.length?b.pts.map(function(p){return '- '+p;}).join('\n'):'- （要点）')+'\n\n'; }); }
+  else { m+='### 小見出し\n- 要点\n- 要点\n- 要点\n\n'; }
+  m+='## 補足\n'+(val('fs_note')||'特になし')+'\n\n';
+  m+='## まとめ\n'+(val('fs_end')||'（結論／次のアクション）')+'\n';
+  return m;
+}
+
+/* ── 穴埋め用ヘルパー ── */
+function B(label){ return '［ '+label+'を記入 ］'; }
+function fb(v,label){ return v ? v : B(label); }
+function mermaidBlock(){
+  return FENCE+'mermaid\nflowchart TD\n'
+    +'    A[質問される] --> B{確実な情報を持っているか}\n'
+    +'    B -->|Yes| C["事実のみ回答（推測ゼロ）"]\n    C --> Z[終了]\n'
+    +'    B -->|No| D["推測しない／『分からない』も述べない"]\n    D --> E["確認テンプレートで返す"]\n'
+    +'    E --> F["本講師へ連絡 → 返答待ち"]\n    F -->|返答あり| G[正式な情報のみ回答]\n    G --> Z\n'
+    +'    F -->|返答なし| H[一定時間で再確認]\n    H --> F\n'+FENCE+'\n';
+}
+function blankList(n){ var s=''; for(var i=1;i<=n;i++){ s+=i+'. '+B('言い回し・項目')+'\n'; } return s; }
+
+/* ── 八章：記事（穴埋め） ── */
+function build8Fill(){
+  var stance=val('f8_stance')||'担当者';
+  var readers=lines('f8_readers'), avoid=parseAvoid(), groups=lines('f8_colgroups');
+  var colname=val('f8_colname')||'◯◯集', count=val('f8_colcount')||'N';
+  var m='';
+  m+='# '+fb(val('f8_title'),'記事タイトル')+'\n';
+  m+='## ── '+fb(val('f8_subtitle'),'サブタイトルの一文')+'\n\n';
+  m+='> **【社内限定／取扱注意】**\n';
+  m+='> 社外への転載・共有はご遠慮ください。流用時は顧客名・案件名・個人情報を含めないこと。\n\n';
+  m+='**作成日：** '+today()+'　**作成：** '+fb(val('f8_author'),'作成者')+'\n\n';
+  m+='---\n\n## 1. 背景と目的\n\n';
+  m+='### 背景\n'+stance+'の現場では、'+B('どんな情報欠損・困りごとが起きるか')+'。本記事は、その状況での標準的な振る舞いをまとめたものです。\n\n';
+  m+='### 前提\n'+fb(val('f8_scope'),'当てはまる範囲・当てはまらないケース')+'\n\n';
+  m+='### 目的\n'+B('この記事を読んだ人にどうなってほしいか')+'\n\n';
+  m+='### 対象者\n'+(readers.length?readers.map(function(r){return '- '+r;}).join('\n'):'- '+B('対象読者'))+'\n\n';
+  m+='### 読了時間\n- 3分\n\n';
+  m+='---\n\n## 2. '+stance+'が避けるべき'+(avoid.length||'N')+'点\n\n';
+  if(avoid.length){ avoid.forEach(function(a,i){ m+=(i+1)+'. **'+a.lead+'。** '+fb(a.note,'なぜ避けるのか（背景・補足）')+'\n'; }); }
+  else { m+='1. **'+B('避けるべき行動')+'。** '+B('なぜ避けるのか')+'\n'; }
+  m+='\n---\n\n## 3. 基本方針\n\n';
+  m+='> **'+fb(val('f8_policy'),'基本方針の一文')+'**\n\n';
+  m+='この方針が最も安全である理由は、'+B('理由を一文で')+'。\n\n';
+  m+='> **【守秘義務との関係】**\n> 確認できていない情報を口にしない規律は、情報管理・守秘義務とも一致します。\n\n';
+  m+='---\n\n## 4. 対応フロー\n\n'+mermaidBlock();
+  m+='\n図：'+fb(val('f8_flow'),'フローの説明')+'\n（実態に合わせて図を修正してください）\n\n';
+  m+='---\n\n## 5. '+colname+'（'+count+'種）\n\n';
+  m+='> いずれの言い回しにも、顧客名・案件名・個人の情報を含めないこと。\n\n';
+  if(groups.length){ groups.forEach(function(g,gi){ m+='### '+String.fromCharCode(65+gi)+'. '+g+'\n\n'+blankList(3)+'\n'; }); }
+  else { m+='### A. '+B('観点')+'\n\n'+blankList(3)+'\n### B. '+B('観点')+'\n\n'+blankList(3)+'\n### C. '+B('観点')+'\n\n'+blankList(3)+'\n'; }
+  m+='---\n\n## 6. 誤解されやすい点\n\n';
+  m+='**'+B('誤解されやすい要点を一文で明言')+'**\n\n最低限そろえる3点：\n- '+B('1つ目')+'\n- '+B('2つ目')+'\n- '+B('3つ目')+'\n\n';
+  m+='---\n\n## 7. '+(val('f8_cmpa')||'A')+' と '+(val('f8_cmpb')||'B')+'\n\n';
+  var axes=val('f8_axes')? val('f8_axes').split(/[／\/、,]/).map(function(s){return s.trim();}).filter(Boolean) : ['立場','扱い','目的','動き','リスク'];
+  m+='| 観点 | '+(val('f8_cmpa')||'A')+' | '+(val('f8_cmpb')||'B')+' |\n|---|---|---|\n';
+  axes.forEach(function(ax){ m+='| '+ax+' | ［記入］ | ［記入］ |\n'; });
+  m+='\n### 要点\n- **'+B('A側の要点')+'**\n- **'+B('B側の要点')+'**\n\n';
+  m+='---\n\n## 8. まとめ\n\n- '+B('条件1')+'\n- '+B('条件2')+'\n- '+B('条件3')+'\n\n';
+  m+='① '+B('補足1')+'\n② '+B('補足2')+'\n\n';
+  m+=fb(val('f8_closing'),'温かい締めの一文')+'\n';
+  return m;
+}
+
+/* ── 簡易：記事（穴埋め） ── */
+function buildSFill(){
+  var blocks=readBlocks(); var m='';
+  m+='# このページについて\n'+fb(val('fs_summary'),(val('fs_title')||'このページ')+'の要約を1〜3行で')+'\n\n';
+  m+='## 前提\n'+(val('fs_premise')? val('fs_premise').split('\n').map(function(s){return '- '+s.trim();}).filter(Boolean).join('\n') : '- '+B('スコープ・条件・対象外'))+'\n\n';
+  m+='## 本題\n';
+  if(blocks.length){ blocks.forEach(function(b){ m+='### '+b.h+'\n'+(b.pts.length?b.pts.map(function(p){return '- '+p;}).join('\n'):'- '+B('要点')+'\n- '+B('要点')+'\n- '+B('要点'))+'\n\n'; }); }
+  else { m+='### '+B('小見出し')+'\n- '+B('要点')+'\n- '+B('要点')+'\n- '+B('要点')+'\n\n'; }
+  m+='## 補足\n'+fb(val('fs_note'),'例外・注意・FAQ（なければ「特になし」）')+'\n\n';
+  m+='## まとめ\n'+fb(val('fs_end'),'結論／次のアクション')+'\n';
+  return m;
+}
+
+/* ── 生成 ── */
+function generate(){
+  if(purpose==='template'){ downloadTemplate(); return; }
+  if(purpose==='plan'){
+    mode='plan';
+    var pt=buildPlanSheet(); var o=$('out'); o.value=pt; o.scrollTop=0;
+    var sp=$('stamp'); sp.textContent='企画'; sp.classList.remove('fire'); void sp.offsetWidth; sp.classList.add('fire');
+    fillBuiltFor=null; setView('text'); saveLocal(true); cheer('企画ばっちり、土台は固まった！'); toast('企画シートを刷りました');
+    return;
+  }
+  var text;
+  if(purpose==='prompt'){ mode='prompt'; text=(tpl==='8')? build8Prompt() : buildSPrompt(); }
+  else { mode='fill'; text=(tpl==='8')? build8Fill() : buildSFill(); }
+  var out=$('out'); out.value=text; out.scrollTop=0;
+  var s=$('stamp'); s.textContent=(purpose==='prompt')?'指南':'草稿';
+  s.classList.remove('fire'); void s.offsetWidth; s.classList.add('fire');
+  fillBuiltFor=null;
+  setView(purpose==='write'?'fill':'text');
+  saveLocal(true);
+  cheer(purpose==='prompt'?'刷り上がり、いよっ！':'下地できた！穴を埋めてこ');
+  toast(purpose==='prompt'?'プロンプトを刷りました':'記事を作りました。空欄を埋めましょう');
+}
+
+/* ── 企画シート ── */
+function buildPlanSheet(){
+  var m='';
+  m+='# 企画シート：'+fb(val('pl_title'),'記事の仮タイトル')+'\n\n';
+  m+='作成日：'+today()+'\n\n---\n\n';
+  m+='## 誰の・何の課題を解くか\n';
+  m+='- 対象：'+fb(val('pl_target'),'誰に向けるか')+'\n';
+  m+='- 課題・痛み：'+fb(val('pl_pain'),'どんな困りごとか')+'\n';
+  m+='- なぜ今：'+fb(val('pl_whynow'),'なぜ今その課題か')+'\n\n';
+  m+='## ペルソナ（具体）\n';
+  m+='- 名前・属性：'+fb(val('pl_pname'),'例：入社1年目の田中さん')+'\n';
+  m+='- 役割・レベル：'+fb(val('pl_prole'),'例：サブ講師2回目／Linux初級')+'\n';
+  m+='- 置かれた状況：'+fb(val('pl_psit'),'例：本講師不在で想定外の質問')+'\n';
+  m+='- なりたい姿：'+fb(val('pl_pgoal'),'例：迷っても事故らず確認して返せる')+'\n\n';
+  m+='## Why ── なぜ書くか\n'+fb(val('pl_why'),'この記事を出す理由・価値')+'\n\n';
+  m+='## What ── 何を渡すか\n'+fb(val('pl_what'),'読者が持ち帰る結論・道具')+'\n\n';
+  m+='## How ── どう解決するか\n'+fb(val('pl_how'),'具体的な手段・流れ')+'\n\n';
+  m+='---\n\n## この企画を記事に落とすと\n';
+  m+='- 想定読者：'+fb(val('pl_target'),'対象')+'（'+fb(val('pl_pname'),'ペルソナ')+'）\n';
+  m+='- 基本メッセージ：'+fb(val('pl_what'),'What')+'\n';
+  m+='- 構成の軸：Why → 背景・目的／What → 基本方針／How → フロー・手順\n';
+  return m;
+}
+function reflectPlan(){
+  var readers=[val('pl_pname'), val('pl_target')].filter(Boolean).join('\n');
+  if(tpl==='8'){
+    setVals({
+      f8_title:   val('f8_title')   || val('pl_title'),
+      f8_readers: val('f8_readers') || readers,
+      f8_scope:   val('f8_scope')   || [val('pl_target'),val('pl_pain'),val('pl_whynow')].filter(Boolean).join('／'),
+      f8_subtitle:val('f8_subtitle')|| val('pl_what'),
+      f8_policy:  val('f8_policy')  || val('pl_what'),
+      f8_flow:    val('f8_flow')    || val('pl_how')
+    });
+  } else {
+    setVals({
+      fs_title:   val('fs_title')   || val('pl_title'),
+      fs_summary: val('fs_summary') || val('pl_why'),
+      fs_premise: val('fs_premise') || [val('pl_target'),val('pl_pain')].filter(Boolean).join('／'),
+      fs_readers: val('fs_readers') || val('pl_target') || val('pl_pname')
+    });
+  }
+  saveLocal(true);
+  setPurpose('write');
+  cheer('企画を記事に流し込んだぜ！');
+  toast('企画を記事フォームへ反映しました');
+}
+
+/* ── 穴埋めを書く（インタラクティブ記入） ── */
+var view='text', fillBuiltFor=null;
+function hasBlanks(s){ return /［[^］]*］/.test(s); }
+function setView(v){
+  view=v;
+  $('viewText').setAttribute('aria-pressed', v==='text');
+  $('viewFill').setAttribute('aria-pressed', v==='fill');
+  $('viewPrev').setAttribute('aria-pressed', v==='preview');
+  var filling=(v==='fill'), prev=(v==='preview');
+  if(filling){
+    var src=$('out').value;
+    if(!hasBlanks(src)){ src=(tpl==='8')? build8Fill() : buildSFill(); $('out').value=src; }
+    if(fillBuiltFor!==src){ renderBlanks(src); fillBuiltFor=src; }
+  }
+  if(prev){ $('previewView').innerHTML = mdToHtml($('out').value); }
+  $('out').style.display = (v==='text')? 'block':'none';
+  $('fillView').classList.toggle('on', filling);
+  $('previewView').classList.toggle('on', prev);
+  $('fillBar').style.display = filling? 'flex':'none';
+  $('fillCount').style.display = filling? 'inline':'none';
+  $('stamp').style.visibility = (v==='text')? 'visible':'hidden';
+  updateMetrics();
+}
+function nextBlank(){
+  var inps=Array.prototype.slice.call($('fillView').querySelectorAll('input.blank'));
+  var active=document.activeElement, start=inps.indexOf(active)+1;
+  for(var k=0;k<inps.length;k++){ var idx=(start+k)%inps.length; if(!inps[idx].value.trim()){ inps[idx].focus(); return; } }
+  if(inps.length) inps[0].focus();
+}
+function articleText(){
+  if(view==='fill'){
+    var s=''; Array.prototype.slice.call($('fillView').childNodes).forEach(function(n){
+      if(n.nodeType===3) s+=n.nodeValue; else if(n.tagName==='INPUT') s+=(n.value||'');
+    });
+    return s;
+  }
+  return $('out').value;
+}
+function updateMetrics(){
+  var plain=articleText().replace(/[#>*`\-\|\[\]（）()]/g,'').replace(/\s+/g,'');
+  var chars=plain.length, min=Math.max(1, Math.round(chars/500));
+  $('metrics').innerHTML = chars? ('約 <b>'+chars+'</b> 字 ／ 読了 <b>'+min+'</b> 分') : '';
+}
+/* ── 軽量 Markdown → HTML（オフライン・外部ライブラリなし） ── */
+function esc(s){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function mdInline(s){
+  s=esc(s);
+  s=s.replace(/`([^`]+)`/g,'<code>$1</code>');
+  s=s.replace(/\*\*([^*]+)\*\*/g,'<strong>$1</strong>');
+  return s;
+}
+function mdTable(rows){
+  var R=rows.map(function(r){ return r.trim().replace(/^\|/,'').replace(/\|$/,'').split('|').map(function(c){return c.trim();}); });
+  var out='<table>';
+  R.forEach(function(cells,idx){
+    if(idx===1 && cells.every(function(c){ return /^:?-{2,}:?$/.test(c.replace(/\s/g,'')); })) return;
+    var tag=(idx===0)?'th':'td';
+    out+='<tr>'+cells.map(function(c){ return '<'+tag+'>'+mdInline(c)+'</'+tag+'>'; }).join('')+'</tr>';
+  });
+  return out+'</table>';
+}
+function mdToHtml(md){
+  var lines=(md||'').split('\n'), html=[], i=0;
+  while(i<lines.length){
+    var ln=lines[i];
+    if(/^```/.test(ln)){ var buf=[]; i++; while(i<lines.length && !/^```/.test(lines[i])){ buf.push(lines[i]); i++; } i++; html.push('<pre><code>'+esc(buf.join('\n'))+'</code></pre>'); continue; }
+    if(/^### /.test(ln)){ html.push('<h3>'+mdInline(ln.slice(4))+'</h3>'); i++; continue; }
+    if(/^## /.test(ln)){ html.push('<h2>'+mdInline(ln.slice(3))+'</h2>'); i++; continue; }
+    if(/^# /.test(ln)){ html.push('<h1>'+mdInline(ln.slice(2))+'</h1>'); i++; continue; }
+    if(/^---\s*$/.test(ln)){ html.push('<hr>'); i++; continue; }
+    if(/^>\s?/.test(ln)){ var q=[]; while(i<lines.length && /^>\s?/.test(lines[i])){ q.push(lines[i].replace(/^>\s?/,'')); i++; } html.push('<blockquote>'+q.map(mdInline).join('<br>')+'</blockquote>'); continue; }
+    if(/^\s*[-*]\s+/.test(ln)){ var it=[]; while(i<lines.length && /^\s*[-*]\s+/.test(lines[i])){ it.push(lines[i].replace(/^\s*[-*]\s+/,'')); i++; } html.push('<ul>'+it.map(function(x){return '<li>'+mdInline(x)+'</li>';}).join('')+'</ul>'); continue; }
+    if(/^\s*\d+\.\s+/.test(ln)){ var it2=[]; while(i<lines.length && /^\s*\d+\.\s+/.test(lines[i])){ it2.push(lines[i].replace(/^\s*\d+\.\s+/,'')); i++; } html.push('<ol>'+it2.map(function(x){return '<li>'+mdInline(x)+'</li>';}).join('')+'</ol>'); continue; }
+    if(/^\|.*\|/.test(ln)){ var rows=[]; while(i<lines.length && /^\|.*\|/.test(lines[i])){ rows.push(lines[i]); i++; } html.push(mdTable(rows)); continue; }
+    if(/^\s*$/.test(ln)){ i++; continue; }
+    var p=[]; while(i<lines.length && lines[i].trim() && !/^(#|>|\s*[-*]\s|\s*\d+\.\s|\||```|---\s*$)/.test(lines[i])){ p.push(lines[i]); i++; }
+    html.push('<p>'+p.map(mdInline).join('<br>')+'</p>');
+  }
+  return html.join('\n');
+}
+function doPrint(){
+  if(view==='fill') commitFill();
+  $('printArea').innerHTML = mdToHtml($('out').value);
+  setTimeout(function(){ window.print(); }, 60);
+}
+function renderBlanks(text){
+  var host=$('fillView'); host.innerHTML='';
+  var re=/［[^］]*］/g, last=0, m;
+  while((m=re.exec(text))){
+    if(m.index>last) host.appendChild(document.createTextNode(text.slice(last,m.index)));
+    var label=m[0].replace(/^［\s*/,'').replace(/\s*］$/,'').replace(/を記入$/,'');
+    var inp=document.createElement('input');
+    inp.type='text'; inp.className='blank'; inp.placeholder=label||'記入';
+    inp.setAttribute('aria-label', label||'記入'); inp.dataset.raw=m[0];
+    inp.addEventListener('input', function(){ sizeBlank(this); this.classList.toggle('done', !!this.value.trim()); updateCount(); updateMetrics(); });
+    inp.addEventListener('keydown', function(e){ if(e.key==='Enter'){ e.preventDefault(); nextBlank(); } });
+    sizeBlank(inp); host.appendChild(inp);
+    last=re.lastIndex;
+  }
+  if(last<text.length) host.appendChild(document.createTextNode(text.slice(last)));
+  updateCount();
+}
+function sizeBlank(i){ var n=Math.max((i.value||i.placeholder||'').length,4)+1; i.style.width=n+'ch'; }
+function updateCount(){
+  var inps=$('fillView').querySelectorAll('input.blank'), left=0;
+  inps.forEach(function(i){ if(!i.value.trim()) left++; });
+  var c=$('fillCount');
+  c.classList.toggle('clear', left===0 && inps.length>0);
+  c.innerHTML = inps.length ? ('残り <b>'+left+'</b> 箇所 ／ 全'+inps.length+'箇所') : '空欄はありません';
+}
+function commitFill(){
+  var host=$('fillView');
+  if(!host.childNodes.length){ toast('先に「穴埋めを書く」を開いてください'); return; }
+  var out='';
+  Array.prototype.slice.call(host.childNodes).forEach(function(n){
+    if(n.nodeType===3) out+=n.nodeValue;
+    else if(n.tagName==='INPUT') out += (n.value.trim()? n.value : n.dataset.raw);
+  });
+  $('out').value=out; fillBuiltFor=out; setView('text'); saveLocal(true); cheer('お見事！清書、できあがり'); toast('清書しました');
+}
+
+/* ── 写し取る・持ち帰る ── */
+function copyOut(){
+  if(view==='fill') commitFill();
+  var t=$('out').value;
+  if(!t){ toast('先に刷り上げてください'); return; }
+  function done(){ toast('写し取りました（コピー）'); }
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(t).then(done, fallbackCopy);
+  } else { fallbackCopy(); }
+  function fallbackCopy(){ var o=$('out'); o.removeAttribute('readonly'); o.select(); try{document.execCommand('copy');done();}catch(e){toast('コピーできませんでした');} o.setAttribute('readonly','');}
+}
+function downloadOut(){
+  if(view==='fill') commitFill();
+  var t=$('out').value; if(!t){ toast('先に刷り上げてください'); return; }
+  var base = (tpl==='8'? val('f8_title') : val('fs_title')) || '社内記事';
+  base = base.replace(/[\\\/:*?"<>|\s]+/g,'_').slice(0,40);
+  var suffix = mode==='prompt'?'_プロンプト':(mode==='plan'?'_企画':(mode==='markdown'?'_下書き':'_穴埋め'));
+  var blob=new Blob([t],{type:'text/markdown;charset=utf-8'});
+  var a=document.createElement('a'); a.href=URL.createObjectURL(blob);
+  a.download=base+suffix+'.md'; document.body.appendChild(a); a.click();
+  setTimeout(function(){URL.revokeObjectURL(a.href);document.body.removeChild(a);},100);
+  toast('.md を持ち帰りました');
+}
+function clearAll(){
+  if(!confirm('入力をすべて白紙に戻しますか？')) return;
+  document.querySelectorAll('#form8 input, #form8 textarea, #formS input:not([type=checkbox]), #formS textarea').forEach(function(e){e.value='';});
+  document.querySelectorAll('input[type=checkbox]').forEach(function(c){c.checked=false;});
+  $('blocks').innerHTML=''; addBlock(); addBlock();
+  $('fillView').innerHTML=''; fillBuiltFor=null; setView('text');
+  $('out').value='白紙に戻しました。'; saveLocal(true); toast('白紙に戻しました');
+}
+
+var toastT;
+function toast(msg){ var t=$('toast'); t.textContent=msg; t.classList.add('show'); clearTimeout(toastT); toastT=setTimeout(function(){t.classList.remove('show');},1800); }
+
+/* ── 状態の保存・復元 ── */
+var FIELD_IDS=['f8_title','f8_author','f8_subtitle','f8_stance','f8_scope','f8_readers','f8_avoid','f8_policy','f8_flow','f8_colname','f8_colcount','f8_colgroups','f8_cmpa','f8_cmpb','f8_axes','f8_closing','fs_title','fs_summary','fs_premise','fs_note','fs_end','fs_readers','pl_title','pl_target','pl_pain','pl_whynow','pl_pname','pl_prole','pl_psit','pl_pgoal','pl_why','pl_what','pl_how'];
+var CHECK_IDS=['f8_word','f8_png','f8_pub','fs_notion'];
+function gatherState(){
+  var st={tpl:tpl, mode:mode, purpose:purpose, out:$('out').value, memo:($('memo')?$('memo').value:''), f:{}, c:{}, blocks:[]};
+  FIELD_IDS.forEach(function(id){ var e=$(id); if(e) st.f[id]=e.value; });
+  CHECK_IDS.forEach(function(id){ var e=$(id); if(e) st.c[id]=e.checked; });
+  Array.prototype.slice.call($('blocks').querySelectorAll('.block')).forEach(function(b){
+    st.blocks.push({h:b.querySelector('input').value, p:b.querySelector('textarea').value});
+  });
+  return st;
+}
+function applyState(st){
+  if(!st) return;
+  FIELD_IDS.forEach(function(id){ var e=$(id); if(e && st.f && id in st.f) e.value=st.f[id]; });
+  CHECK_IDS.forEach(function(id){ var e=$(id); if(e && st.c && id in st.c) e.checked=!!st.c[id]; });
+  $('blocks').innerHTML='';
+  var bl=(st.blocks && st.blocks.length)? st.blocks : [{h:'手順',p:''},{h:'注意点',p:''}];
+  bl.forEach(function(b){ addBlock(b.h, b.p); });
+  switchTpl(st.tpl||'8');
+  if(typeof st.out==='string') $('out').value=st.out;
+  if($('memo')) $('memo').value = st.memo||'';
+  fillBuiltFor=null;
+  setPurpose(st.purpose||'prompt');
+}
+
+/* ── 端末に一時保存（自動保存つき／使えない環境では下書きファイルへ誘導） ── */
+var LS_KEY='kawaraban_draft_v1', LS=false, saveTimer;
+function lsOK(){ try{ localStorage.setItem('__kt','1'); localStorage.removeItem('__kt'); return true; }catch(e){ return false; } }
+function saveLocal(silent){
+  if(!LS){ if(!silent) toast('この環境では端末保存は使えません。下書き(.json)をご利用ください'); return; }
+  try{
+    localStorage.setItem(LS_KEY, JSON.stringify(gatherState()));
+    var d=new Date(); $('saveInfo').textContent='端末に自動保存：'+('0'+d.getHours()).slice(-2)+':'+('0'+d.getMinutes()).slice(-2);
+    if(!silent) toast('一時保存しました');
+  }catch(e){ if(!silent) toast('保存できませんでした'); }
+}
+function loadLocal(){
+  if(!LS){ toast('この環境では端末保存は使えません'); return; }
+  try{
+    var s=localStorage.getItem(LS_KEY);
+    if(!s){ toast('保存された下書きがありません'); return; }
+    applyState(JSON.parse(s)); toast('続きを呼び出しました');
+  }catch(e){ toast('読み込めませんでした'); }
+}
+function scheduleSave(){ if(!LS) return; clearTimeout(saveTimer); saveTimer=setTimeout(function(){ saveLocal(true); }, 900); }
+
+/* ── 名前を付けて複数保存 ── */
+var DRAFTS_KEY='kawaraban_drafts_v1';
+function getDrafts(){ try{ return JSON.parse(localStorage.getItem(DRAFTS_KEY)||'{}'); }catch(e){ return {}; } }
+function putDrafts(o){ try{ localStorage.setItem(DRAFTS_KEY, JSON.stringify(o)); }catch(e){} }
+function refreshDraftList(){
+  var sel=$('draftList'); if(!sel) return;
+  var d=getDrafts(), cur=sel.value;
+  sel.innerHTML='<option value="">― 保存済みを選ぶ ―</option>';
+  Object.keys(d).sort().forEach(function(n){ var o=document.createElement('option'); o.value=n; o.textContent=n; sel.appendChild(o); });
+  sel.value=cur;
+}
+function saveNamed(){
+  if(!LS){ toast('この環境では端末保存は使えません。下書き(.json)をご利用ください'); return; }
+  var name=val('draftName') || (tpl==='8'?val('f8_title'):val('fs_title')) || '無題';
+  var d=getDrafts(); d[name]=gatherState(); putDrafts(d); refreshDraftList(); $('draftList').value=name;
+  cheer('「'+name+'」を蔵に保存。安心しな'); toast('「'+name+'」を保存しました');
+}
+function loadNamed(){
+  var name=$('draftList').value; if(!name){ toast('保存済みを選んでください'); return; }
+  var d=getDrafts(); if(!d[name]){ toast('見つかりません'); return; }
+  applyState(d[name]); $('draftName').value=name; refreshDraftList(); $('draftList').value=name;
+  toast('「'+name+'」を呼び出しました');
+}
+function deleteNamed(){
+  var name=$('draftList').value; if(!name){ toast('保存済みを選んでください'); return; }
+  if(!confirm('「'+name+'」を削除しますか？')) return;
+  var d=getDrafts(); delete d[name]; putDrafts(d); refreshDraftList(); toast('削除しました');
+}
+
+/* ── サンプル投入 ── */
+function setVals(o){ Object.keys(o).forEach(function(k){ var e=$(k); if(e) e.value=o[k]; }); }
+function loadSample(){
+  if(tpl==='8'){
+    setVals({
+      f8_title:'新卒研修サブ講師 情報対応指針', f8_author:'石黒 友季子',
+      f8_subtitle:'情報欠損時は「確認して回答」に一本化する',
+      f8_stance:'新卒研修のサブ講師として客先に参画',
+      f8_scope:'研修のサブ講師に特化。プロジェクト現場では当てはまらない。',
+      f8_readers:'経験の浅いサブ講師\n情報連携がない中で立ち回りたい人\n同じ失敗をしたくない人',
+      f8_avoid:'独断と受け取られる言動／指示があるまで見守る\n相手のプライドを傷つける指摘／一旦指摘しない\n「分からない」と言って責任を抱え込む',
+      f8_policy:'不確実な事項は、すべて「確認して回答」で返す',
+      f8_flow:'質問→確実な情報がある？ Yes=事実のみ回答／No=確認テンプレ→本講師へ→返答待ち→なければ再確認ループ',
+      f8_colname:'言い回し集', f8_colcount:'30',
+      f8_colgroups:'A=その場で答えない\nB=推測を避ける\nC=「分からない」も言わない',
+      f8_cmpa:'研修中のサブ講師', f8_cmpb:'現場の先輩', f8_axes:'立場／扱い／目的／動き／リスク',
+      f8_closing:'私の失敗が、あなたの役に立ちますように'
+    });
+  } else {
+    setVals({
+      fs_title:'Django+SQLite デプロイ手引き',
+      fs_summary:'新人向け。読めば社内ルールと同時アクセスの注意がわかる。',
+      fs_premise:'開発環境はSQLite前提。本番のPostgreSQL移行は対象外。',
+      fs_note:'WAL設定で同時読み取りは改善するが、書き込みは直列。',
+      fs_end:'まずは手引き通りに。詰まったら確認チャンネルへ。',
+      fs_readers:'新人エンジニア'
+    });
+    $('blocks').innerHTML='';
+    addBlock('手順','リポジトリをclone\n仮想環境を作成\nmigrateして起動');
+    addBlock('注意点','SQLiteは同時書き込みに弱い\nWALを有効化する\n本番はPostgreSQLを検討');
+  }
+  saveLocal(true); cheer('お手本、どうぞ！まねして書いてみな'); toast('サンプルを入れました');
+}
+
+/* ── 入力をCSVで書き出す ── */
+function exportCSV(){
+  var st=gatherState();
+  var L=(st.tpl==='8')?LAB8:LABS, rows=[['区分','項目','内容']];
+  Object.keys(L).forEach(function(k){ if(st.f[k]!==undefined) rows.push([st.tpl==='8'?'八章':'簡易', L[k], st.f[k]||'']); });
+  if(st.tpl==='S'){ st.blocks.forEach(function(b,i){ rows.push(['簡易','本題'+(i+1)+'：'+(b.h||''), b.p||'']); }); }
+  if(st.memo) rows.push(['共通','メモ', st.memo]);
+  var csv=rows.map(function(r){ return r.map(function(c){ c=(c==null?'':String(c)).replace(/"/g,'""'); return '"'+c+'"'; }).join(','); }).join('\r\n');
+  var base=((st.tpl==='8'?st.f.f8_title:st.f.fs_title)||'社内記事').replace(/[\\\/:*?"<>|\s]+/g,'_').slice(0,40);
+  dl('\uFEFF'+csv, base+'_入力.csv', 'text/csv');
+  toast('CSVを書き出しました');
+}
+
+/* ── Word（.doc）／Excel（.xls）で保存（オフライン・Office互換HTML） ── */
+function fileBase(){ return ((tpl==='8'?val('f8_title'):(tpl==='S'?val('fs_title'):val('pl_title')))||'社内記事').replace(/[\\\/:*?"<>|\s]+/g,'_').slice(0,40); }
+function downloadWord(){
+  if(view==='fill') commitFill();
+  var body=mdToHtml($('out').value);
+  var css="body{font-family:'Yu Gothic','MS PGothic',sans-serif;font-size:11pt;line-height:1.7;color:#222;} h1{font-size:18pt;border-bottom:2px solid #c9a24b;padding-bottom:3px;} h2{font-size:14pt;color:#13213f;} h3{font-size:12pt;color:#9c2c1c;} table{border-collapse:collapse;} th,td{border:1px solid #999;padding:4px 8px;} th{background:#0f6e56;color:#fff;} blockquote{border-left:4px solid #c9a24b;background:#f6eedb;padding:6px 12px;margin:8px 0;} code{background:#f0e8d3;padding:1px 4px;}";
+  var html='<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/1999/xhtml"><head><meta charset="utf-8"><title>'+fileBase()+'</title><style>'+css+'</style></head><body>'+body+'</body></html>';
+  dl('\uFEFF'+html, fileBase()+'.doc', 'application/msword');
+  toast('Word（.doc）で保存しました');
+}
+function xesc(s){ return (s==null?'':String(s)).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>'); }
+function downloadExcel(){
+  var st=gatherState(), L=(st.tpl==='8')?LAB8:LABS;
+  var trs='<tr><th>区分</th><th>項目</th><th>内容</th></tr>';
+  Object.keys(L).forEach(function(k){ if(st.f[k]!==undefined) trs+='<tr><td>'+(st.tpl==='8'?'八章':'簡易')+'</td><td>'+L[k]+'</td><td>'+xesc(st.f[k])+'</td></tr>'; });
+  if(st.tpl==='S'){ st.blocks.forEach(function(b,i){ trs+='<tr><td>簡易</td><td>本題'+(i+1)+'：'+xesc(b.h)+'</td><td>'+xesc(b.p)+'</td></tr>'; }); }
+  if(st.memo) trs+='<tr><td>共通</td><td>メモ</td><td>'+xesc(st.memo)+'</td></tr>';
+  var html='<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/1999/xhtml"><head><meta charset="utf-8"><style>table{border-collapse:collapse;} td,th{border:1px solid #999;padding:4px 8px;font-family:\'Yu Gothic\',sans-serif;} th{background:#0f6e56;color:#fff;}</style></head><body><table>'+trs+'</table></body></html>';
+  dl('\uFEFF'+html, fileBase()+'_入力.xls', 'application/vnd.ms-excel');
+  toast('Excel（.xls）で保存しました');
+}
+
+/* ── 動作ログ（不具合の控え・コピー） ── */
+var ERRLOG=[];
+function logText(){
+  return '瓦版工房 PRO '+APP_VER+'（'+APP_STAMP+'）\nUA: '+navigator.userAgent+'\n端末保存: '+(LS?'有効':'無効')+'\n――――\n'+(ERRLOG.length? ERRLOG.join('\n') : '（記録なし）');
+}
+function logEvent(type,msg){
+  var t=new Date().toLocaleTimeString('ja-JP');
+  ERRLOG.push('['+t+'] '+type+': '+msg);
+  if(ERRLOG.length>300) ERRLOG.shift();
+  var o=$('logOut'); if(o && $('logPanel').classList.contains('on')) o.value=logText();
+}
+function openLog(){ $('logOut').value=logText(); $('logPanel').classList.add('on'); }
+function closeLog(){ $('logPanel').classList.remove('on'); }
+function clearLog(){ ERRLOG=[]; $('logOut').value=logText(); toast('ログを消しました'); }
+function copyLog(){
+  var t=logText();
+  if(navigator.clipboard && navigator.clipboard.writeText){ navigator.clipboard.writeText(t).then(function(){ toast('ログをコピーしました'); }); }
+  else { var o=$('logOut'); o.removeAttribute('readonly'); o.select(); try{document.execCommand('copy'); toast('ログをコピーしました');}catch(e){} o.setAttribute('readonly',''); }
+}
+window.addEventListener('error', function(e){ logEvent('ERROR', (e.message||'')+' @'+((e.filename||'').split('/').pop())+':'+(e.lineno||0)); });
+window.addEventListener('unhandledrejection', function(e){ logEvent('REJECT', (e.reason&&e.reason.message)||String(e.reason)); });
+
+/* ── 汎用ダウンロード・下書きファイル ── */
+function dl(text,name,mime){
+  var b=new Blob([text],{type:mime+';charset=utf-8'});
+  var a=document.createElement('a'); a.href=URL.createObjectURL(b); a.download=name;
+  document.body.appendChild(a); a.click();
+  setTimeout(function(){ URL.revokeObjectURL(a.href); document.body.removeChild(a); },100);
+}
+function saveFile(){
+  var base=((tpl==='8'?val('f8_title'):val('fs_title'))||'社内記事').replace(/[\\\/:*?"<>|\s]+/g,'_').slice(0,40);
+  dl(JSON.stringify(gatherState(),null,2), base+'_下書き.json', 'application/json');
+  toast('下書きファイルを保存しました');
+}
+function loadFile(){ $('draftFile').click(); }
+
+/* ── 空欄ひな形（社内で直接書く用） ── */
+function template8(){
+  return '# ［ 記事タイトル ］\n## ── ［ サブタイトルの一文 ］\n\n'
+    +'> **【社内限定／取扱注意】**\n> 社外への転載・共有はご遠慮ください。流用時は顧客名・案件名・個人情報を含めないこと。\n\n'
+    +'**作成日：** '+today()+'　**作成：** ［ 作成者 ］\n\n---\n\n'
+    +'## 1. 背景と目的\n\n### 背景\n［ どんな状況・困りごとが起きるか ］\n\n### 前提\n［ 当てはまる範囲・当てはまらないケース ］\n\n'
+    +'### 目的\n［ 読んだ人にどうなってほしいか ］\n\n### 対象者\n- ［ 対象読者1 ］\n- ［ 対象読者2 ］\n- ［ 対象読者3 ］\n\n### 読了時間\n- 3分\n\n---\n\n'
+    +'## 2. ［ 立場 ］が避けるべき N点\n\n1. **［ 避けるべき行動1 ］。** ［ なぜ避けるのか ］\n2. **［ 避けるべき行動2 ］。** ［ なぜ避けるのか ］\n3. **［ 避けるべき行動3 ］。** ［ なぜ避けるのか ］\n\n---\n\n'
+    +'## 3. 基本方針\n\n> **［ 基本方針の一文 ］**\n\nこの方針が最も安全である理由は、［ 理由 ］。\n\n> **【守秘義務との関係】**\n> 確認できていない情報を口にしない規律は、情報管理・守秘義務とも一致します。\n\n---\n\n'
+    +'## 4. 対応フロー\n\n'+mermaidBlock()+'\n図：［ フローの説明 ］\n\n---\n\n'
+    +'## 5. ［ ◯◯集 ］（ N種）\n\n> いずれの言い回しにも、顧客名・案件名・個人の情報を含めないこと。\n\n'
+    +'### A. ［ 観点 ］\n1. ［ 項目 ］\n2. ［ 項目 ］\n3. ［ 項目 ］\n\n### B. ［ 観点 ］\n1. ［ 項目 ］\n2. ［ 項目 ］\n3. ［ 項目 ］\n\n### C. ［ 観点 ］\n1. ［ 項目 ］\n2. ［ 項目 ］\n3. ［ 項目 ］\n\n---\n\n'
+    +'## 6. 誤解されやすい点\n\n**［ 要点を一文で ］**\n\n最低限そろえる3点：\n- ［ 1つ目 ］\n- ［ 2つ目 ］\n- ［ 3つ目 ］\n\n---\n\n'
+    +'## 7. ［ A ］ と ［ B ］\n\n| 観点 | ［ A ］ | ［ B ］ |\n|---|---|---|\n| 立場 | ［記入］ | ［記入］ |\n| 扱い | ［記入］ | ［記入］ |\n| 目的 | ［記入］ | ［記入］ |\n| 動き | ［記入］ | ［記入］ |\n| リスク | ［記入］ | ［記入］ |\n\n### 要点\n- **［ A側の要点 ］**\n- **［ B側の要点 ］**\n\n---\n\n'
+    +'## 8. まとめ\n\n- ［ 条件1 ］\n- ［ 条件2 ］\n- ［ 条件3 ］\n\n① ［ 補足1 ］\n② ［ 補足2 ］\n\n［ 温かい締めの一文 ］\n';
+}
+function templateS(){
+  return '# このページについて\n［ このページの要約を1〜3行で ］\n\n'
+    +'## 前提\n- ［ スコープ・条件・対象外 ］\n\n'
+    +'## 本題\n### ［ 小見出し ］\n- ［ 要点 ］\n- ［ 要点 ］\n- ［ 要点 ］\n\n### ［ 小見出し ］\n- ［ 要点 ］\n- ［ 要点 ］\n- ［ 要点 ］\n\n'
+    +'## 補足\n［ 例外・注意・FAQ（なければ「特になし」） ］\n\n'
+    +'## まとめ\n［ 結論／次のアクション ］\n';
+}
+function downloadTemplate(){
+  var t=(tpl==='8')? template8() : templateS();
+  dl(t, (tpl==='8'?'社内記事_ひな形_八章':'社内記事_ひな形_簡易')+'.md', 'text/markdown');
+  toast('ひな形を持ち帰りました');
+}
+
+/* ── 白兎マスコット（応援） ── */
+var MASCOT_TIPS=['記事は「誰の何の課題」から！','Why→What→Howで筋が通るぜ','固有名詞は最後に総点検な','迷ったら「確認して回答」！','空欄はEnterで次へ飛べるよ','こまめに保存、感心感心','一気に書かず、型に乗せな','読了3分＝約1800字が目安だ','タブを閉じても控えてあるから安心しな','CSVから続きも書けるぜ'];
+var idleTimer;
+function rabbitSay(msg){ var b=$('rabbitBubble'); if(!b) return; b.textContent=msg; b.classList.remove('hide'); }
+function rabbitIdle(){ clearTimeout(idleTimer); idleTimer=setTimeout(function tick(){ rabbitSay(MASCOT_TIPS[Math.floor(Math.random()*MASCOT_TIPS.length)]); idleTimer=setTimeout(tick,15000); }, 15000); }
+function cheer(msg){ rabbitSay(msg); rabbitIdle(); }
+function hideMascot(){ var m=$('mascot'); if(m) m.style.display='none'; }
+
+/* ── 江戸グッズが流れるヘッダー ── */
+var EDO_ICONS=['🏮','🪭','🍡','🎐','🌸','🗻','🍶','🎌','🐰','⛩️','🎏','🧧','🍵','🪅'];
+function prefersReduced(){ try{ return window.matchMedia('(prefers-reduced-motion: reduce)').matches; }catch(e){ return false; } }
+function spawnGood(){
+  if(prefersReduced()) return;
+  var t=$('ticker'); if(!t) return;
+  var el=document.createElement('span'); el.className='gd';
+  el.textContent=EDO_ICONS[Math.floor(Math.random()*EDO_ICONS.length)];
+  var w=t.clientWidth||320; el.style.left=w+'px'; el.style.top=(Math.random()*3)+'px';
+  t.appendChild(el);
+  var dur=7000+Math.random()*5000;
+  if(el.animate){ el.animate([{transform:'translateX(0)'},{transform:'translateX(-'+(w+90)+'px)'}],{duration:dur,easing:'linear'}).onfinish=function(){ el.remove(); }; }
+  else { setTimeout(function(){ el.remove(); }, dur); }
+}
+
+/* ── CSV から続きを読み込む ── */
+var REV8={'タイトル':'f8_title','作成者':'f8_author','サブタイトル':'f8_subtitle','立場':'f8_stance','適用範囲':'f8_scope','対象読者':'f8_readers','避けるべき点':'f8_avoid','基本方針':'f8_policy','フロー':'f8_flow','集名':'f8_colname','件数':'f8_colcount','グループ':'f8_colgroups','比較A':'f8_cmpa','比較B':'f8_cmpb','比較軸':'f8_axes','締め':'f8_closing'};
+var REVS={'タイトル':'fs_title','要約':'fs_summary','前提':'fs_premise','補足':'fs_note','まとめ':'fs_end','想定読者':'fs_readers'};
+function parseCSV(text){
+  var rows=[], row=[], cur='', i=0, inq=false, c;
+  text=text.replace(/^\uFEFF/,'');
+  while(i<text.length){
+    c=text[i];
+    if(inq){ if(c==='"'){ if(text[i+1]==='"'){ cur+='"'; i++; } else inq=false; } else cur+=c; }
+    else { if(c==='"') inq=true; else if(c===','){ row.push(cur); cur=''; } else if(c==='\n'){ row.push(cur); rows.push(row); row=[]; cur=''; } else if(c==='\r'){} else cur+=c; }
+    i++;
+  }
+  if(cur!=='' || row.length){ row.push(cur); rows.push(row); }
+  return rows;
+}
+function importCSVBtn(){ $('csvFile').click(); }
+function importCSV(text){
+  var rows=parseCSV(text); if(!rows.length){ toast('CSVを読めませんでした'); return; }
+  var isEight = rows.some(function(r){ return r[0]==='八章'; });
+  switchTpl(isEight?'8':'S');
+  var blocks=[];
+  rows.slice(1).forEach(function(r){
+    var ku=r[0], item=(r[1]||''), v=(r[2]||'');
+    if(item==='メモ'){ if($('memo')) $('memo').value=v; return; }
+    var mb=item.match(/^本題\d+：(.*)$/);
+    if(mb){ blocks.push({h:mb[1], p:v}); return; }
+    var id=(ku==='八章')?REV8[item]:REVS[item];
+    if(id && $(id)) $(id).value=v;
+  });
+  if(!isEight){ $('blocks').innerHTML=''; (blocks.length?blocks:[{h:'手順',p:''},{h:'注意点',p:''}]).forEach(function(b){ addBlock(b.h, b.p); }); }
+  saveLocal(true); setPurpose('write'); cheer('CSVから続き、いくぜ！'); toast('CSVから続きを読み込みました');
+}
+
+
+$('lsNote').textContent = LS
+  ? '書くたびにブラウザへ自動で控えます。次に開くと続きから書けます。'
+  : '※この画面（プレビュー）では端末保存が使えません。ファイルとして開くと使えます。どの環境でも使える下書き(.json)もご利用ください。';
+$('draftFile').addEventListener('change', function(){
+  var f=this.files && this.files[0]; if(!f){ return; }
+  var r=new FileReader();
+  r.onload=function(){ try{ applyState(JSON.parse(r.result)); toast('下書きを読み込みました'); }catch(e){ toast('ファイルを読めませんでした'); } };
+  r.readAsText(f); this.value='';
+});
+document.addEventListener('input', function(e){ if(e.target.closest && e.target.closest('#form8,#formS,#formPlan,#blocks,.opts,#memo')) scheduleSave(); });
+document.addEventListener('change', function(e){ if(e.target.closest && e.target.closest('.opts')) scheduleSave(); });
+$('csvFile').addEventListener('change', function(){
+  var f=this.files && this.files[0]; if(!f){ return; }
+  var r=new FileReader();
+  r.onload=function(){ try{ importCSV(r.result); }catch(e){ toast('CSVを読めませんでした'); } };
+  r.readAsText(f); this.value='';
+});
+/* タブを閉じても保存（強化） */
+window.addEventListener('beforeunload', function(){ if(LS){ try{ localStorage.setItem(LS_KEY, JSON.stringify(gatherState())); }catch(e){} } });
+document.addEventListener('visibilitychange', function(){ if(document.visibilityState==='hidden') saveLocal(true); });
+refreshDraftList();
+addBlock('手順',''); addBlock('注意点','');
+setPurpose('plan'); switchTpl('8');
+if(LS){ try{ var saved=localStorage.getItem(LS_KEY); if(saved){ applyState(JSON.parse(saved)); toast('前回の下書きを呼び出しました'); } }catch(e){} }
+/* 江戸グッズの流れ・白兎の応援を起動 */
+setInterval(function(){ if(Math.random()<0.6) spawnGood(); }, 2600);
+setTimeout(spawnGood, 700);
+rabbitSay('ようこそ！まずは「企画」から始めようぜ'); rabbitIdle();
+logEvent('起動', '瓦版工房 PRO '+APP_VER);
+</script>
+</body>
+</html>
